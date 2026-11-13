@@ -1,0 +1,5 @@
+{
+	"api": "https://formexposed.com",
+	"protect_api": "https://formconfirmed.com/v1",
+	"protect_name": "formconfirmed"
+}
