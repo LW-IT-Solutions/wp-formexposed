@@ -4,7 +4,7 @@ Tags: contact form, spam, bots, captcha, honeypot
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.10.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -100,7 +100,11 @@ Nothing, if the agency installed the plugin. Otherwise enter the code the agency
 
 == External services ==
 
-This plugin talks to two services of LW IT Solutions (formexposed): **formexposed.com** (form check, monitoring, account connection) and, only when you enter keys for the hosted form protection, **formconfirmed.com** (form protection). Privacy policy: https://formexposed.com/privacy · Terms of service: https://formexposed.com/terms · Data processing agreement: https://formexposed.com/dpa · Legal notice: https://formexposed.com/legal
+This plugin talks to two services of LW IT Solutions (formexposed): **formexposed.com** (form check, monitoring, account connection) and, only when you enter keys for the hosted form protection, **formconfirmed.com** (form protection). Each service is described below with the data sent and when.
+
+formexposed.com: terms of service https://formexposed.com/en/legal/terms · privacy policy https://formexposed.com/en/legal/privacy · data processing agreement https://formexposed.com/en/legal/dpa · legal notice https://formexposed.com/en/legal/imprint
+
+formconfirmed.com: terms of service https://formconfirmed.com/en/legal/terms · privacy policy https://formconfirmed.com/en/legal/privacy
 
 = formexposed.com - the check =
 
@@ -119,7 +123,13 @@ Nothing of this is sent before the site is connected (after "Connect" or an agen
 * When a form's e-mail fails (POST /api/plugin/mailfail, at most once an hour): the kind of the error and whether the enquiry was kept.
 * While the site is in maintenance mode (POST /api/plugin/maintenance): "on" every hour, "off" once.
 
+= formexposed.com - check recorder (optional) =
+
+Nothing happens until a site administrator starts a recording in the formexposed.com account of the site. formexposed.com then opens a page of your site in a new window; while a logged-in administrator clicks the steps to a form, the page records up to five clicks as CSS selectors. When the form is selected, the page hands back to the formexposed.com window (in the browser, with window.postMessage): the address of the page and of the entry page (without query string), the CSS selectors of the recorded clicks and of the form, and a one-time code of the recording. Never input values, form contents or submissions. Nothing is sent when no recording is started.
+
 = formconfirmed.com - hosted form protection =
+
+This service is run by LW IT Solutions as formconfirmed: terms of service https://formconfirmed.com/en/legal/terms, privacy policy https://formconfirmed.com/en/legal/privacy.
 
 Only after you entered (or fetched) a site key and a secret key on the Form protection tab:
 
@@ -130,6 +140,9 @@ Only after you entered (or fetched) a site key and a secret key on the Form prot
 Not sent anywhere: the quarantine, the rescued e-mails, stored enquiries, form names and the details of the form settings check. The proof of work of the protection layer runs on this site only; its challenges come from your own server and are signed with a key derived from your WordPress salts.
 
 == Changelog ==
+
+= 1.10.1 =
+* Readme: the External services section names the terms of service and privacy policy of both services (formexposed.com and formconfirmed.com) with their direct addresses and describes the optional check recorder.
 
 = 1.10.0 =
 * Works with the new formconfirmed plugin: while it is active, the form protection tab stands down and formconfirmed checks the forms with the same keys. The protection layer keeps running and serves formconfirmed as its backup check; messages formconfirmed holds wait in the quarantine of this plugin.
