@@ -210,7 +210,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 			<li><?php esc_html_e( 'Optional: an invisible proof of work instead of a CAPTCHA', 'formexposed' ); ?></li>
 			<li><?php esc_html_e( 'Also comments and registration; throw-away addresses and filters you choose', 'formexposed' ); ?></li>
 		</ul>
-		<p style="color:#50575e;font-size:12px"><?php esc_html_e( 'Blocked messages are not delivered: Contact Form 7 and Gravity Forms file them as spam, WPForms and Elementor show the sender an error. Every one of them waits in the quarantine. After switching on, a new check starts so you can see the result.', 'formexposed' ); ?></p>
+		<p style="color:#50575e;font-size:12px"><?php esc_html_e( 'Blocked messages are not delivered: Contact Form 7 and Gravity Forms file them as spam, WPForms and Elementor show the sender an error. Every one of them waits in the quarantine. After switching on, run a new check with "Check now" or "Check again" to see the result.', 'formexposed' ); ?></p>
 		<p>
 		<?php if ( $formexposed_guard ) : ?>
 			<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_guard_off' ), 'formexposed_guard_off' ) ); ?>"><?php esc_html_e( 'Turn protection off', 'formexposed' ); ?></a>

@@ -513,13 +513,12 @@ class Formexposed_Core {
 		return true;
 	}
 
-	/** Start a new check right after a fix, so the result shows whether it worked. */
-	private static function check_after_fix( $text ) {
-		$r = self::api_check();
-		if ( ! is_wp_error( $r ) ) {
-			update_option( self::OPT_LAST, array( 'token' => (string) $r['token'], 'status' => 'queued', 'report_url' => (string) $r['report_url'], 'started_at' => time(), 'checked_at' => time() ), false );
-		}
-		set_transient( 'formexposed_msg', array( 'ok', $text ), 120 );
+	/**
+	 * Message after a fix. Since 1.10.2 a fix never contacts formexposed.com by itself: a new check runs
+	 * only when the administrator clicks "Check now" / "Check again", as the readme says.
+	 */
+	private static function message_after_fix( $text ) {
+		set_transient( 'formexposed_msg', array( 'ok', $text . ' ' . __( 'To confirm it, run a new check with "Check now" or "Check again".', 'formexposed' ) ), 120 );
 	}
 
 	public static function action_guard_on() {
@@ -528,7 +527,7 @@ class Formexposed_Core {
 				set_transient( 'formexposed_msg', array( 'error', __( 'The one-click protection works with Contact Form 7, WPForms, Gravity Forms, Elementor Pro, Fluent Forms, Formidable, Ninja Forms and WooCommerce. None of them is active on this site.', 'formexposed' ) ), 120 );
 			} else {
 				Formexposed_Guard::set( true );
-				self::check_after_fix( __( 'Protection is on. A new check has started to confirm it.', 'formexposed' ) );
+				self::message_after_fix( __( 'Protection is on.', 'formexposed' ) );
 			}
 		}
 		wp_safe_redirect( self::page_url() );
@@ -553,7 +552,7 @@ class Formexposed_Core {
 			if ( Formexposed_Guard::cf7() ) {
 				Formexposed_Guard::set( true );
 			}
-			self::check_after_fix( __( 'The reCAPTCHA test key is removed and the protection layer is on. Add your own reCAPTCHA keys under Contact -> Integration if you want reCAPTCHA as well.', 'formexposed' ) );
+			self::message_after_fix( __( 'The reCAPTCHA test key is removed and the protection layer is on. Add your own reCAPTCHA keys under Contact -> Integration if you want reCAPTCHA as well.', 'formexposed' ) );
 		}
 		wp_safe_redirect( self::page_url() );
 		exit;
@@ -697,7 +696,7 @@ class Formexposed_Core {
 		) );
 	}
 
-	/** Site-wide notice when the last check said "exposed". */
+	/** Notice on the dashboard and the plugins page when the last check said "exposed" (hidden for a week on request). */
 	public static function notice() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -710,7 +709,7 @@ class Formexposed_Core {
 			return;
 		}
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		if ( $screen && 'settings_page_formexposed' === $screen->id ) {
+		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins' ), true ) ) {
 			return;
 		}
 		echo '<div class="notice notice-warning"><p><strong>formexposed:</strong> ' . esc_html__( 'Your contact form is exposed to bots and spam.', 'formexposed' ) . ' <a href="' . esc_url( self::page_url() ) . '">' . esc_html__( 'See what is missing', 'formexposed' ) . '</a> · <a href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_dismiss' ), 'formexposed_dismiss' ) ) . '">' . esc_html__( 'Hide for a week', 'formexposed' ) . '</a></p></div>';

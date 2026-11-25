@@ -545,13 +545,17 @@ class Formexposed_Rescue {
 		exit;
 	}
 
-	/** On every admin screen while enquiries wait: they are the site owner's customers. */
+	/** While enquiries wait (they are the site owner's customers): on the dashboard, the plugins page and the formexposed page. */
 	public static function notice() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 		$n = self::count_waiting();
 		if ( ! $n ) {
+			return;
+		}
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins', 'settings_page_formexposed' ), true ) ) {
 			return;
 		}
 		if ( 'formexposed' === filter_input( INPUT_GET, 'page', FILTER_UNSAFE_RAW ) && 'rescue' === Formexposed_Core::tab() ) {

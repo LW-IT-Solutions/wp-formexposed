@@ -4,7 +4,7 @@ Tags: contact form, spam, bots, captcha, honeypot
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.10.1
+Stable tag: 1.10.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,7 +108,7 @@ formconfirmed.com: terms of service https://formconfirmed.com/en/legal/terms · 
 
 = formexposed.com - the check =
 
-Only when you click "Check now" (one request) and while that check runs (one status request every few seconds from your admin page). Sent: your site's host name, the plugin version, the WordPress version and the site language. To prove the request comes from this site, the plugin prints a `<meta name="formexposed-verify">` tag with a random key in the head of your pages. The service then loads a few of your public pages with the user agent `FormExposedBot` (https://formexposed.com/bot). Site owners can opt out at https://formexposed.com/opt-out.
+Only when an administrator clicks "Check now" (or "Check again" / "Try again" after an earlier check): one request, and while that check runs one status request every few seconds from the admin page. Nothing else starts a check: activating the plugin, switching the protection layer on or off, removing a reCAPTCHA test key and all other settings send nothing to formexposed.com. Sent: your site's host name, the plugin version, the WordPress version and the site language. To prove the request comes from this site, the plugin prints a `<meta name="formexposed-verify">` tag with a random key in the head of your pages. The service then loads a few of your public pages with the user agent `FormExposedBot` (https://formexposed.com/bot). Site owners can opt out at https://formexposed.com/opt-out.
 
 = formexposed.com - connecting an account =
 
@@ -140,6 +140,10 @@ Only after you entered (or fetched) a site key and a secret key on the Form prot
 Not sent anywhere: the quarantine, the rescued e-mails, stored enquiries, form names and the details of the form settings check. The proof of work of the protection layer runs on this site only; its challenges come from your own server and are signed with a key derived from your WordPress salts.
 
 == Changelog ==
+
+= 1.10.2 =
+* A check on formexposed.com runs only when you click "Check now" / "Check again". Switching the protection layer on and removing a reCAPTCHA test key no longer start a check by themselves.
+* The notices "Your contact form is exposed" and "enquiries could not be sent" appear only on the dashboard, the plugins page and the formexposed page.
 
 = 1.10.1 =
 * Readme: the External services section names the terms of service and privacy policy of both services (formexposed.com and formconfirmed.com) with their direct addresses and describes the optional check recorder.
