@@ -23,7 +23,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 	<p class="description"><?php esc_html_e( 'Checks whether the contact forms on this site are protected against bots and spam. The service loads a few of your public pages and looks at the forms - it never submits one.', 'formexposed' ); ?></p>
 
 	<?php if ( is_array( $msg ) ) : ?>
-		<div class="notice notice-<?php echo 'ok' === $msg[0] ? 'success' : 'error'; ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
+		<div class="notice notice-<?php echo esc_attr( 'ok' === $msg[0] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
 	<?php endif; ?>
 	<?php if ( ! empty( $last['error'] ) ) : ?>
 		<div class="notice notice-error"><p><?php echo esc_html( $last['error'] ); ?></p></div>
@@ -36,7 +36,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 			<p><a class="button button-primary" href="<?php echo esc_url( $formexposed_check_url ); ?>"><?php esc_html_e( 'Check now', 'formexposed' ); ?></a></p>
 
 		<?php elseif ( $formexposed_laeuft ) : ?>
-			<h2 style="margin-top:0" id="fe-wait"><?php esc_html_e( 'Checking …', 'formexposed' ); ?></h2>
+			<h2 style="margin-top:0" id="formexposed-wait"><?php esc_html_e( 'Checking …', 'formexposed' ); ?></h2>
 			<p><?php esc_html_e( 'The service is loading your pages. This page refreshes itself when the result is in.', 'formexposed' ); ?></p>
 			<?php // assets/js/admin.js polls admin-ajax (formexposed_status) and reloads the page once the check is done - see Formexposed_Core::admin_assets(). ?>
 
@@ -78,7 +78,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 	$formexposed_swarm   = get_option( 'formexposed_swarm' );
 	$formexposed_swarm_n = is_array( $formexposed_swarm ) && isset( $formexposed_swarm['links'] ) ? count( (array) $formexposed_swarm['links'] ) : 0;
 	?>
-	<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid <?php echo $formexposed_guard ? '#00750f' : '#2271b1'; ?>;padding:16px 20px;margin:16px 0">
+	<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid <?php echo esc_attr( $formexposed_guard ? '#00750f' : '#2271b1' ); ?>;padding:16px 20px;margin:16px 0">
 		<h2 style="margin-top:0"><?php esc_html_e( 'Fix it for me', 'formexposed' ); ?>
 			<span style="font-weight:normal;color:#50575e;font-size:13px"> · <?php esc_html_e( 'free, runs on your server only', 'formexposed' ); ?></span></h2>
 		<?php if ( $formexposed_testkey ) : ?>
@@ -123,7 +123,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 				<label><input type="checkbox" name="extra_woo_register" value="1" <?php checked( $formexposed_extra['woo_register'] ); ?>> <?php esc_html_e( 'WooCommerce registration', 'formexposed' ); ?></label><br>
 				<label><input type="checkbox" name="extra_woo_checkout" value="1" <?php checked( $formexposed_extra['woo_checkout'] ); ?>> <?php esc_html_e( 'WooCommerce checkout (classic checkout only; test an order after switching on)', 'formexposed' ); ?></label><br>
 				<?php else : ?>
-				<input type="hidden" name="extra_woo_register" value="<?php echo $formexposed_extra['woo_register'] ? '1' : ''; ?>">
+				<input type="hidden" name="extra_woo_register" value="<?php echo esc_attr( $formexposed_extra['woo_register'] ? '1' : '' ); ?>">
 				<?php endif; ?>
 				<label><input type="checkbox" name="extra_login" value="1" <?php checked( $formexposed_extra['login'] ); ?> <?php disabled( defined( 'FORMEXPOSED_NO_LOGIN_GUARD' ) && FORMEXPOSED_NO_LOGIN_GUARD ); ?>> <?php esc_html_e( 'Login form (only the page check, no rate limit)', 'formexposed' ); ?></label>
 				<br><span style="color:#50575e;font-size:12px;margin-left:24px"><?php esc_html_e( 'Locked out? Add this line to wp-config.php:', 'formexposed' ); ?> <code style="word-break:break-all">define( 'FORMEXPOSED_NO_LOGIN_GUARD', true );</code></span><br>
@@ -197,7 +197,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 		<?php elseif ( ! $formexposed_plugins ) : ?>
 			<p><?php esc_html_e( 'The one-click protection works with Contact Form 7, WPForms, Gravity Forms, Elementor Pro, Fluent Forms, Formidable, Ninja Forms and WooCommerce. None of them is active on this site - for other form plugins, follow the guide above.', 'formexposed' ); ?></p>
 		<?php else : ?>
-			<p><?php echo esc_html( sprintf( /* translators: %s: list of form plugins */ __( 'One click adds a protection layer to every form of %s on this site. It runs here, on your server - no keys, no third-party service. Only the number of blocked submissions is shared with your formexposed account.', 'formexposed' ), implode( ', ', $formexposed_plugins ) ) ); ?></p>
+			<p><?php echo esc_html( sprintf( /* translators: %s: list of form plugins */ __( 'One click adds a protection layer to every form of %s on this site. It runs here, on your server - no keys, no third-party service. While this site is connected to a formexposed account, counts are shared as listed below and in the readme (External services).', 'formexposed' ), implode( ', ', $formexposed_plugins ) ) ); ?></p>
 		<?php endif; ?>
 		<ul style="list-style:disc;padding-left:20px;color:#50575e">
 			<li><?php esc_html_e( 'A hidden trap field that only bots fill in', 'formexposed' ); ?></li>
@@ -226,7 +226,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 	$formexposed_rc_bak = Formexposed_Recaptcha::backup();
 	if ( $formexposed_rc_an || $formexposed_rc_bak ) :
 		?>
-	<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid <?php echo $formexposed_rc_an ? '#996800' : '#00750f'; ?>;padding:16px 20px;margin:16px 0">
+	<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid <?php echo esc_attr( $formexposed_rc_an ? '#996800' : '#00750f' ); ?>;padding:16px 20px;margin:16px 0">
 		<h2 style="margin-top:0"><?php esc_html_e( 'Move away from Google reCAPTCHA', 'formexposed' ); ?></h2>
 		<?php if ( $formexposed_rc_an ) : ?>
 			<p><?php echo esc_html( sprintf( /* translators: %s: list of form plugins */ __( 'reCAPTCHA is still in use here: %s.', 'formexposed' ), implode( ', ', array_map( array( 'Formexposed_Recaptcha', 'place_name' ), $formexposed_rc_an ) ) ) ); ?></p>
@@ -330,9 +330,10 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 		<p style="color:#50575e;font-size:12px"><?php esc_html_e( 'For many sites at once:', 'formexposed' ); ?> <code>wp formexposed connect fxc_...</code></p>
 	</div>
 
-	<p class="description"><?php echo esc_html( sprintf( /* translators: %s: host name */ __( 'Sent to formexposed.com when you click "Check now": the host name (%s), the plugin and WordPress versions and the site language. The service reads your public pages the way a visitor would. Nothing is submitted. Once a day, and only while this site is connected to an account: the number of blocked submissions and of sent and failed e-mails - counts, no content.', 'formexposed' ), Formexposed_Core::host() ) ); ?>
-		<?php esc_html_e( 'Since 1.4.0, while connected, also: the versions of the form, CAPTCHA and mail plugins; the numbers of the form settings check and of stored enquiries; right away, the kind of error when a form e-mail fails; and whether the site is in maintenance mode. Never addresses, names or message content.', 'formexposed' ); ?>
-		<a href="<?php echo esc_url( FORMEXPOSED_API . '/privacy' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Privacy', 'formexposed' ); ?></a> ·
+	<p class="description"><?php echo esc_html( sprintf( /* translators: %s: host name */ __( 'Sent to formexposed.com when you click "Check now": the host name (%s), the plugin key and connect secret of this plugin (to prove the request comes from this site), the plugin and WordPress versions and the site language. The service reads your public pages the way a visitor would. Nothing is submitted. Once a day, and only while this site is connected to an account: the number of blocked submissions and of sent and failed e-mails - counts, no content.', 'formexposed' ), Formexposed_Core::host() ) ); ?>
+		<?php esc_html_e( 'While connected, also: the versions of the form, CAPTCHA and mail plugins (again right after a plugin change); the numbers of the form settings check, the kind of mail route, which form plugins are active and where reCAPTCHA is still used; the numbers of stored enquiries; right away, the kind of error when a form e-mail fails; and whether the site is in maintenance mode. Never addresses, names or message content.', 'formexposed' ); ?>
+		<a href="<?php echo esc_url( FORMEXPOSED_API . '/en/legal/privacy' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Privacy', 'formexposed' ); ?></a> ·
+		<a href="<?php echo esc_url( FORMEXPOSED_API . '/en/legal/terms' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Terms', 'formexposed' ); ?></a> ·
 		<a href="<?php echo esc_url( FORMEXPOSED_API . '/bot' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'About the crawler', 'formexposed' ); ?></a></p>
 <h2 style="margin-top:28px"><?php esc_html_e( 'Optional form tools', 'formexposed' ); ?></h2>
 <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:12px;border:1px solid #dcdcde;background:#fff">

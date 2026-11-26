@@ -20,7 +20,7 @@ $formexposed_bericht = get_option( Formexposed_Rescue::OPT_LAST );
 	<p class="description"><?php echo esc_html( sprintf( /* translators: %d: days */ __( 'When the e-mail a form sends to you could not be handed over (wrong SMTP login, mail server down, no mail function on the server), the enquiry would be lost. formexposed keeps a copy of that e-mail here for %d days: recipient, subject, text, headers - attached files only by name. "Send again" hands it to WordPress once more; when that works, the copy is removed. Nothing of this leaves your server.', 'formexposed' ), Formexposed_Rescue::DAYS ) ); ?></p>
 
 	<?php if ( is_array( $msg ) ) : ?>
-		<div class="notice notice-<?php echo 'ok' === $msg[0] ? 'success' : 'error'; ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
+		<div class="notice notice-<?php echo esc_attr( 'ok' === $msg[0] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
 	<?php endif; ?>
 
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde">

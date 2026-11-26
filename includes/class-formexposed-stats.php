@@ -50,7 +50,9 @@ class Formexposed_Stats {
 	}
 
 	/** A submission a form plugin accepted. */
-	public static function quarantine_released() { self::bump('quarantine_released'); }
+	public static function quarantine_released() {
+		self::bump( 'quarantine_released' );
+	}
 
 	public static function submission() {
 		self::bump( 'submissions' );
@@ -121,7 +123,7 @@ class Formexposed_Stats {
 		foreach ( self::window( self::load() ) as $day => $d ) {
 			$row = array(
 				'day'         => $day,
-                'quarantine_released' => (int)($d['quarantine_released']??0),
+				'quarantine_released' => (int) ( $d['quarantine_released'] ?? 0 ),
 				'blocked'     => isset( $d['blocked'] ) && is_array( $d['blocked'] ) ? array_map( 'intval', $d['blocked'] ) : array(),
 				'submissions' => isset( $d['submissions'] ) ? (int) $d['submissions'] : 0,
 				'mail_sent'   => isset( $d['mail_sent'] ) ? (int) $d['mail_sent'] : 0,

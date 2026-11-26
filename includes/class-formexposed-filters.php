@@ -294,7 +294,7 @@ class Formexposed_Filters {
 			return;
 		}
 		global $wpdb;
-		$lock = 'fe_filter_observe_' . substr( hash( 'sha256', home_url() ), 0, 24 );
+		$lock = 'formexposed_filter_observe_' .substr( hash( 'sha256', home_url() ), 0, 24 );
 		if ( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s,1)', $lock ) ) !== 1 ) {
 			return;
 		}
@@ -375,7 +375,16 @@ class Formexposed_Filters {
 			wp_die( esc_html__( 'Not allowed.', 'formexposed' ) );
 		}
 		check_admin_referer( 'formexposed_filters' );
-		$p = wp_unslash( $_POST );
+		// Every field is sanitized as it is read; nothing else of the request is used.
+		$p = array();
+		foreach ( array( 'discard_candidate', 'activate_candidate', 'disposable', 'country_mode', 'filter_mode' ) as $k ) {
+			$p[ $k ] = isset( $_POST[ $k ] ) && is_string( $_POST[ $k ] ) ? sanitize_key( wp_unslash( $_POST[ $k ] ) ) : '';
+		}
+		foreach ( array( 'extra_disposable', 'words' ) as $k ) {
+			$p[ $k ] = isset( $_POST[ $k ] ) && is_string( $_POST[ $k ] ) ? sanitize_textarea_field( wp_unslash( $_POST[ $k ] ) ) : '';
+		}
+		$p['countries'] = isset( $_POST['countries'] ) && is_string( $_POST['countries'] ) ? sanitize_text_field( wp_unslash( $_POST['countries'] ) ) : '';
+		$p['scripts']   = isset( $_POST['scripts'] ) && is_array( $_POST['scripts'] ) ? map_deep( wp_unslash( $_POST['scripts'] ), 'sanitize_key' ) : array();
 		if ( ! empty( $p['discard_candidate'] ) ) {
 			delete_option( self::CANDIDATE );
 			delete_option( self::OBSERVATIONS );
@@ -393,21 +402,22 @@ class Formexposed_Filters {
 			wp_safe_redirect( Formexposed_Core::page_url() );
 			exit;
 		}
-		$scripts  = isset( $p['scripts'] ) && is_array( $p['scripts'] ) ? array_values( array_intersect( array_keys( self::SCRIPTS ), array_map( 'sanitize_key', $p['scripts'] ) ) ) : array();
+		$scripts  = is_array( $p['scripts'] ?? null ) ? array_values( array_intersect( array_keys( self::SCRIPTS ), array_filter( $p['scripts'], 'is_string' ) ) ) : array();
 		$settings = array(
 			'disposable'       => ! empty( $p['disposable'] ),
-			'extra_disposable' => isset( $p['extra_disposable'] ) ? implode( "\n", array_slice( array_filter( array_map( 'sanitize_text_field', preg_split( '/[\r\n,]+/', (string) $p['extra_disposable'] ) ) ), 0, 500 ) ) : '',
+			'extra_disposable' => is_string( $p['extra_disposable'] ?? null ) ? implode( "\n", array_slice( array_filter( array_map( 'sanitize_text_field', preg_split( '/[\r\n,]+/', $p['extra_disposable'] ) ) ), 0, 500 ) ) : '',
 			'scripts'          => $scripts,
-			'words'            => isset( $p['words'] ) ? implode( "\n", array_slice( array_filter( array_map( 'sanitize_text_field', preg_split( '/[\r\n]+/', (string) $p['words'] ) ) ), 0, 500 ) ) : '',
-			'country_mode'     => isset( $p['country_mode'] ) && in_array( $p['country_mode'], array( 'allow', 'block' ), true ) ? $p['country_mode'] : 'off',
-			'countries'        => isset( $p['countries'] ) ? implode( ', ', self::country_list( (string) $p['countries'] ) ) : '',
+			'words'            => is_string( $p['words'] ?? null ) ? implode( "\n", array_slice( array_filter( array_map( 'sanitize_text_field', preg_split( '/[\r\n]+/', $p['words'] ) ) ), 0, 500 ) ) : '',
+			'country_mode'     => in_array( $p['country_mode'] ?? '', array( 'allow', 'block' ), true ) ? $p['country_mode'] : 'off',
+			'countries'        => is_string( $p['countries'] ?? null ) ? implode( ', ', self::country_list( $p['countries'] ) ) : '',
 		);
-		if ( ( $p['filter_mode'] ?? 'active' ) === 'observe' ) {
+		if ( 'observe' === $p['filter_mode'] ) {
 			self::store_candidate( $settings );
 		} else {
 			update_option( self::OPT, $settings, false );
 			delete_option( self::CANDIDATE );
-			delete_option( self::OBSERVATIONS );}
+			delete_option( self::OBSERVATIONS );
+		}
 		set_transient( 'formexposed_msg', array( 'ok', __( 'Saved.', 'formexposed' ) ), 120 );
 		wp_safe_redirect( Formexposed_Core::page_url() );
 		exit;

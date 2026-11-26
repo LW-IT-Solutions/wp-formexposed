@@ -195,10 +195,13 @@ class Formexposed_Protect {
 
 	// ------------------------------------------------------------------ front end
 
-	/** The widget script is registered on every page, but only loaded where a protected form is printed. */
+	/**
+	 * The widget script is registered on every page, but only loaded where a protected form is printed. In the footer
+	 * (fifth parameter true, which WordPress 6.2 understands as well); async/defer come from async_tag().
+	 */
 	public static function register_script() {
-		wp_register_script( 'formexposed-protect', FORMEXPOSED_PROTECT_API . '/widget.js', array(), FORMEXPOSED_VERSION, array( 'in_footer' => true ) );
-		wp_register_script( 'formexposed-protect-forms', plugins_url( 'assets/js/protect.js', FORMEXPOSED_FILE ), array(), FORMEXPOSED_VERSION, array( 'in_footer' => true ) );
+		wp_register_script( 'formexposed-protect', FORMEXPOSED_PROTECT_API . '/widget.js', array(), FORMEXPOSED_VERSION, true );
+		wp_register_script( 'formexposed-protect-forms', plugins_url( 'assets/js/protect.js', FORMEXPOSED_FILE ), array(), FORMEXPOSED_VERSION, true );
 	}
 
 	/** Load the widget (and, for forms that are equipped in the browser, the small helper). */
@@ -250,7 +253,9 @@ class Formexposed_Protect {
 		} elseif ( 'data' === $name ) {
 			$v = filter_input( INPUT_POST, $name, FILTER_SANITIZE_URL );
 		} else {
-			$v = filter_input( INPUT_POST, $name, FILTER_CALLBACK, array( 'options' => 'sanitize_text_field' ) );
+			// phpcs:disable WordPress.Security.NonceVerification.Missing -- Our own hidden fields in the forms of other plugins, which verify their own requests; the values are checked against our signatures.
+			$v = isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ? sanitize_text_field( wp_unslash( $_POST[ $name ] ) ) : '';
+			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		}
 		return is_string( $v ) ? $v : '';
 	}
@@ -955,11 +960,11 @@ class Formexposed_Protect {
 				<?php wp_nonce_field( 'formexposed_protect_save' ); ?>
 				<input type="hidden" name="action" value="formexposed_protect_save">
 				<table class="form-table" role="presentation">
-					<tr><th scope="row"><label for="fep-site"><?php esc_html_e( 'Site key', 'formexposed' ); ?></label></th>
-						<td><input id="fep-site" name="site_key" class="regular-text code" value="<?php echo esc_attr( $o['site_key'] ); ?>" autocomplete="off" spellcheck="false">
+					<tr><th scope="row"><label for="formexposed-protect-site"><?php esc_html_e( 'Site key', 'formexposed' ); ?></label></th>
+						<td><input id="formexposed-protect-site" name="site_key" class="regular-text code" value="<?php echo esc_attr( $o['site_key'] ); ?>" autocomplete="off" spellcheck="false">
 						<p class="description"><?php esc_html_e( 'Public, printed in the form. Starts with fcp_pub_.', 'formexposed' ); ?></p></td></tr>
-					<tr><th scope="row"><label for="fep-secret"><?php esc_html_e( 'Secret key', 'formexposed' ); ?></label></th>
-						<td><input id="fep-secret" name="secret" type="password" class="regular-text code" value="" autocomplete="new-password" spellcheck="false" placeholder="<?php echo $o['secret'] ? esc_attr__( 'saved - leave empty to keep', 'formexposed' ) : ''; ?>">
+					<tr><th scope="row"><label for="formexposed-protect-secret"><?php esc_html_e( 'Secret key', 'formexposed' ); ?></label></th>
+						<td><input id="formexposed-protect-secret" name="secret" type="password" class="regular-text code" value="" autocomplete="new-password" spellcheck="false" placeholder="<?php echo esc_attr( $o['secret'] ? __( 'saved - leave empty to keep', 'formexposed' ) : '' ); ?>">
 						<?php if ( $o['secret'] ) : ?>
 							<label style="display:block;margin-top:6px"><input type="checkbox" name="remove_keys" value="1"> <?php esc_html_e( 'Remove both keys (switches the hosted protection off)', 'formexposed' ); ?></label>
 						<?php endif; ?>
@@ -1094,9 +1099,16 @@ class Formexposed_Protect {
 		if ( ! self::on() ) {
 			return '';
 		}
+		if ( self::opt()['content'] ) {
+			return sprintf(
+				/* translators: %s: product name of the hosted form protection */
+				__( 'Our forms are protected by %s, a service of LW IT Solutions (formexposed) with servers in the EU. On pages with a protected form your browser loads a script of the service and solves a small calculation task; no cookies are set and nothing is stored on your device. When you send the form, this website sends the result, your IP address, the e-mail address entered in the form and the message text to the service, which checks them for spam and returns a decision. The message text is checked in memory and not stored; the IP address is only kept shortened and hashed. If the check cannot be completed, your message is held for review or refused, not delivered unchecked.', 'formexposed' ),
+				FORMEXPOSED_PROTECT_NAME
+			);
+		}
 		return sprintf(
 			/* translators: %s: product name of the hosted form protection */
-			__( 'Our forms are protected by %s, a service of LW IT Solutions (formexposed) with servers in the EU. On pages with a protected form your browser loads a script of the service and solves a small calculation task; no cookies are set and nothing is stored on your device. When you send the form, this website sends the result, your IP address, the e-mail address entered in the form and - if enabled - the message text to the service, which checks them for spam and returns a decision. The message text is checked in memory and not stored; the IP address is only kept shortened and hashed. If the check cannot be completed, your message is held for review or refused, not delivered unchecked.', 'formexposed' ),
+			__( 'Our forms are protected by %s, a service of LW IT Solutions (formexposed) with servers in the EU. On pages with a protected form your browser loads a script of the service and solves a small calculation task; no cookies are set and nothing is stored on your device. When you send the form, this website sends the result, your IP address and the e-mail address entered in the form to the service, which checks them for spam and returns a decision. The IP address is only kept shortened and hashed. If the check cannot be completed, your message is held for review or refused, not delivered unchecked.', 'formexposed' ),
 			FORMEXPOSED_PROTECT_NAME
 		);
 	}

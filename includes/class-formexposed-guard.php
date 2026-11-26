@@ -149,15 +149,36 @@ class Formexposed_Guard {
 	 * into an empty one.
 	 */
 	public static function request() {
-		$text = array( 'filter' => FILTER_CALLBACK, 'options' => 'sanitize_text_field' );
-		$p    = filter_input_array( INPUT_POST, array(
-			'formexposed_website' => array( 'filter' => FILTER_SANITIZE_SPECIAL_CHARS, 'flags' => FILTER_FLAG_STRIP_LOW ),
-			'formexposed_time'    => $text,
-			'formexposed_token'   => $text,
-			'formexposed_js'      => $text,
-			'formexposed_pow'     => $text,
-		) );
-		return is_array( $p ) ? array_filter( $p, 'is_string' ) : array();
+		$p    = array();
+		$trap = filter_input( INPUT_POST, 'formexposed_website', FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FLAG_STRIP_LOW );
+		if ( is_string( $trap ) ) {
+			$p['formexposed_website'] = $trap;
+		}
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Our own hidden fields in the forms of other plugins, which verify their own requests; the values are checked against our signatures.
+		foreach ( array( 'formexposed_time', 'formexposed_token', 'formexposed_js', 'formexposed_pow' ) as $k ) {
+			if ( isset( $_POST[ $k ] ) && is_string( $_POST[ $k ] ) ) {
+				$p[ $k ] = sanitize_text_field( wp_unslash( $_POST[ $k ] ) );
+			}
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $p;
+	}
+
+	/**
+	 * Our five fields out of the data a form plugin hands over (Fluent Forms, Formidable, Ninja Forms), sanitized the
+	 * same way as request() reads them; everything else in that data is left alone.
+	 */
+	public static function own_fields( $src ) {
+		$out = array();
+		foreach ( array( 'formexposed_website', 'formexposed_time', 'formexposed_token', 'formexposed_js', 'formexposed_pow' ) as $k ) {
+			if ( ! isset( $src[ $k ] ) || ! is_string( $src[ $k ] ) ) {
+				continue;
+			}
+			$out[ $k ] = 'formexposed_website' === $k
+				? (string) filter_var( $src[ $k ], FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FLAG_STRIP_LOW )
+				: sanitize_text_field( $src[ $k ] );
+		}
+		return $out;
 	}
 
 	/**
@@ -165,10 +186,14 @@ class Formexposed_Guard {
 	 * with FILTER_SANITIZE_URL, so wp_parse_str() still reads it, every other field with sanitize_text_field().
 	 */
 	public static function posted( $name ) {
-		$v = 'data' === $name
-			? filter_input( INPUT_POST, $name, FILTER_SANITIZE_URL )
-			: filter_input( INPUT_POST, $name, FILTER_CALLBACK, array( 'options' => 'sanitize_text_field' ) );
-		return is_string( $v ) ? $v : '';
+		if ( 'data' === $name ) {
+			$v = filter_input( INPUT_POST, $name, FILTER_SANITIZE_URL );
+			return is_string( $v ) ? $v : '';
+		}
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Our own hidden fields in the forms of other plugins, which verify their own requests; the values are checked against our signatures.
+		$v = isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ? sanitize_text_field( wp_unslash( $_POST[ $name ] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $v;
 	}
 
 	/**
@@ -313,7 +338,7 @@ class Formexposed_Guard {
 		$html .= '<span class="formexposed-hp" aria-hidden="true" style="position:absolute!important;left:-9999px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important">'
 			. '<label>' . esc_html__( 'Leave this field empty', 'formexposed' ) . '<input type="text" name="formexposed_website" value="" tabindex="-1" autocomplete="off"></label>'
 			. '</span>'
-			. '<input type="hidden" name="formexposed_js" value="" data-fe="' . esc_attr( self::js_value( $ts ) ) . '">';
+			. '<input type="hidden" name="formexposed_js" value="" data-formexposed-js="' . esc_attr( self::js_value( $ts ) ) . '">';
 		if ( Formexposed_Pow::on() ) {
 			$html .= '<input type="hidden" name="formexposed_pow" value="">';   // filled by the script once the answer is found
 		}
@@ -813,14 +838,7 @@ class Formexposed_Guard {
 		// travel in the raw "data" string of the request, so they are read from there.
 		$raw = array();
 		wp_parse_str( self::posted( 'data' ), $raw );
-		$own = array();
-		foreach ( array( 'formexposed_website', 'formexposed_time', 'formexposed_token', 'formexposed_js', 'formexposed_pow' ) as $k ) {
-			if ( isset( $raw[ $k ] ) && is_string( $raw[ $k ] ) ) {
-				$own[ $k ] = $raw[ $k ];
-			} elseif ( isset( $form_data[ $k ] ) && is_string( $form_data[ $k ] ) ) {
-				$own[ $k ] = $form_data[ $k ];
-			}
-		}
+		$own = self::own_fields( $raw ) + self::own_fields( is_array( $form_data ) ? $form_data : array() );
 		$grund = self::check( $own, $liste, $pairs );
 		if ( null !== $grund ) {
 			self::stopped( 'fluentform', is_object( $form ) && isset( $form->title ) ? (string) $form->title : 'Fluent Forms', $grund, $pairs );
@@ -854,7 +872,7 @@ class Formexposed_Guard {
 				$pairs[] = array( 'Field ' . $fid, $w );
 			}
 		}
-		$grund = self::check( $values, $liste, $pairs );
+		$grund = self::check( self::own_fields( $values ), $liste, $pairs );
 		if ( null !== $grund ) {
 			self::stopped( 'formidable', 'Formidable', $grund, $pairs );
 			$errors['formexposed'] = self::message( $grund );
@@ -872,7 +890,7 @@ class Formexposed_Guard {
 		if ( ! is_array( $form_data ) || ! empty( $form_data['errors'] ) ) {
 			return $form_data;
 		}
-		$p     = isset( $form_data['extra'] ) && is_array( $form_data['extra'] ) ? $form_data['extra'] : array();
+		$p     = self::own_fields( isset( $form_data['extra'] ) && is_array( $form_data['extra'] ) ? $form_data['extra'] : array() );
 		$liste = array();
 		$pairs = array();
 		foreach ( isset( $form_data['fields'] ) && is_array( $form_data['fields'] ) ? $form_data['fields'] : array() as $f ) {

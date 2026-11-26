@@ -217,7 +217,7 @@ class Formexposed_Health {
 		foreach ( $dirs as $d ) {
 			if ( 'listing' === $d['state'] ) {
 				$counts['uploads_listing']++;
-				$items[] = array( 'kind' => 'uploads_listing', 'plugin' => '', 'id' => 0, 'form' => 'wp-content/uploads/' . $d['dir'] . '/', 'detail' => $d['url'], 'edit' => '' );
+				$items[] = array( 'kind' => 'uploads_listing', 'plugin' => '', 'id' => 0, 'form' => self::uploads_rel() . $d['dir'] . '/', 'detail' => $d['url'], 'edit' => '' );
 			}
 		}
 		$r = array(
@@ -235,6 +235,13 @@ class Formexposed_Health {
 		);
 		update_option( self::OPT_SCAN, $r, false );
 		return $r;
+	}
+
+	/** The upload folder relative to the WordPress folder, for display ("wp-content/uploads/" on most sites). */
+	public static function uploads_rel() {
+		$dir  = wp_normalize_path( (string) wp_upload_dir( null, false )['basedir'] );
+		$root = wp_normalize_path( ABSPATH );
+		return trailingslashit( 0 === strpos( $dir, $root ) ? substr( $dir, strlen( $root ) ) : $dir );
 	}
 
 	/** The last stored check (or an empty one). */

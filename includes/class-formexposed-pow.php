@@ -51,7 +51,9 @@ class Formexposed_Pow {
 		// switched on. A challenge is stateless and cheap; it reveals nothing.
 		if ( Formexposed_Guard::on() ) {
 			add_action( 'wp_ajax_' . self::ACTION, array( __CLASS__, 'ajax' ) );
-			add_action( 'wp_ajax_nopriv_' . self::ACTION, array( __CLASS__, 'ajax' ) );
+			// Public on purpose and without a nonce: visitors (and cached pages) fetch a signed task; the handler stores
+		// nothing and changes nothing, the answer is checked with its signature when the form is sent.
+		add_action( 'wp_ajax_nopriv_' . self::ACTION, array( __CLASS__, 'ajax' ) );
 		}
 		if ( is_admin() ) {
 			add_action( 'admin_post_formexposed_pow', array( __CLASS__, 'action_toggle' ) );

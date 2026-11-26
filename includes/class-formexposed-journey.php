@@ -22,17 +22,28 @@ class Formexposed_Journey {
 		if ( is_admin() ) {
 			return;
 		}
-		if ( null !== filter_input( INPUT_GET, 'formexposed_record', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) ) && current_user_can( 'manage_options' ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only the presence of the parameter is read; the recorder runs for site administrators only.
+		if ( isset( $_GET['formexposed_record'] ) && current_user_can( 'manage_options' ) ) {
 			// Only a logged-in site administrator can operate this. The fragment never goes to the server.
 			nocache_headers();
-			wp_enqueue_script( 'formexposed-recorder', plugins_url( '../assets/recorder.js', __FILE__ ), array(), FORMEXPOSED_VERSION, true );
+			wp_enqueue_script( 'formexposed-recorder', plugins_url( 'assets/recorder.js', FORMEXPOSED_FILE ), array(), FORMEXPOSED_VERSION, true );
 			$u = wp_parse_url( FORMEXPOSED_API );
 			wp_localize_script(
 				'formexposed-recorder',
 				'formexposedRecorder',
 				array(
 					'origin' => ( $u['scheme'] ?? 'https' ) . '://' . ( $u['host'] ?? '' ) . ( isset( $u['port'] ) ? ':' . $u['port'] : '' ),
-					'lang'   => strtolower( str_replace( '_', '-', get_locale() ) ),
+					'text'   => array(
+						'title'     => __( 'formexposed: record check journey', 'formexposed' ),
+						'intro'     => __( 'Click the steps to the form. No typing or submissions.', 'formexposed' ),
+						'pick'      => __( 'Select form', 'formexposed' ),
+						'stop'      => __( 'Stop recording', 'formexposed' ),
+						'steps'     => __( 'Steps:', 'formexposed' ),
+						'unclear'   => __( 'This element cannot be selected uniquely.', 'formexposed' ),
+						'notStored' => __( 'This click is not recorded. Choose a link or a safe open button.', 'formexposed' ),
+						'maxSteps'  => __( 'Maximum five steps.', 'formexposed' ),
+						'done'      => __( 'Form copied. Review and save in the formexposed window.', 'formexposed' ),
+					),
 				)
 			);
 			return;
@@ -40,13 +51,20 @@ class Formexposed_Journey {
 		if ( ! get_option( 'formexposed_recovery_on' ) ) {
 			return;
 		}
-		wp_enqueue_script( 'formexposed-recovery', plugins_url( '../assets/recovery.js', __FILE__ ), array(), FORMEXPOSED_VERSION, true );
+		wp_enqueue_script( 'formexposed-recovery', plugins_url( 'assets/recovery.js', FORMEXPOSED_FILE ), array(), FORMEXPOSED_VERSION, true );
 		wp_localize_script(
 			'formexposed-recovery',
 			'formexposedRecovery',
 			array(
-				'email' => get_option( 'formexposed_recovery_email', '' ),
-				'lang'  => strtolower( str_replace( '_', '-', get_locale() ) ),
+				'email' => sanitize_email( (string) get_option( 'formexposed_recovery_email', '' ) ),
+				'text'  => array(
+					'kept'    => __( 'The enquiry was not sent. Your entries remain in this open form.', 'formexposed' ),
+					'offline' => __( 'You are offline. Reconnect before sending again.', 'formexposed' ),
+					'failed'  => __( 'Sending failed. Review your entries and send again.', 'formexposed' ),
+					'back'    => __( 'Back to the form', 'formexposed' ),
+					'mail'    => __( 'Contact by email instead', 'formexposed' ),
+					'unknown' => __( 'The delivery status is unclear. Check for a confirmation before sending again.', 'formexposed' ),
+				),
 			)
 		);
 	}

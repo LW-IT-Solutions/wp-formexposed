@@ -128,7 +128,7 @@ class Formexposed_Maintenance {
 			$r = Formexposed_Core::api_maintenance( true );
 			if ( ! is_wp_error( $r ) ) {
 				$s['sent_at'] = time();
-				$s['until']   = isset( $r['until'] ) ? (string) $r['until'] : null;
+				$s['until']   = isset( $r['until'] ) ? sanitize_text_field( (string) $r['until'] ) : null;
 			}
 		} elseif ( ! $an && $s['on'] && $s['sent_at'] ) {
 			$r = Formexposed_Core::api_maintenance( false );
@@ -137,7 +137,7 @@ class Formexposed_Maintenance {
 				return;
 			}
 			$s['sent_at'] = 0;
-			$s['until']   = isset( $r['until'] ) ? $r['until'] : null;
+			$s['until']   = isset( $r['until'] ) ? sanitize_text_field( (string) $r['until'] ) : null;
 		}
 		$s['on'] = $an;
 		update_option( self::OPT, $s, false );

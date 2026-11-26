@@ -19,14 +19,14 @@ $formexposed_alt    = $formexposed_tage > 0 ? $formexposed_tage : 365;
 	<p class="description"><?php esc_html_e( 'Many form plugins keep every enquiry in the database - names, e-mail addresses, messages - for years. Under the GDPR (Art. 5(1)(e), storage limitation) personal data may only be kept as long as it is needed. Here you see what is stored on this site and can have old enquiries deleted automatically.', 'formexposed' ); ?></p>
 
 	<?php if ( is_array( $msg ) ) : ?>
-		<div class="notice notice-<?php echo 'ok' === $msg[0] ? 'success' : 'error'; ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
+		<div class="notice notice-<?php echo esc_attr( 'ok' === $msg[0] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
 	<?php endif; ?>
 
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="background:#fff;border:1px solid #c3c4c7;padding:16px 20px;margin:16px 0">
 		<input type="hidden" name="action" value="formexposed_retention">
 		<?php wp_nonce_field( 'formexposed_retention' ); ?>
-		<label for="fe-retention"><strong><?php esc_html_e( 'Delete stored enquiries after', 'formexposed' ); ?></strong></label>
-		<select id="fe-retention" name="retention_days">
+		<label for="formexposed-retention"><strong><?php esc_html_e( 'Delete stored enquiries after', 'formexposed' ); ?></strong></label>
+		<select id="formexposed-retention" name="retention_days">
 			<option value="0" <?php selected( 0, $formexposed_tage ); ?>><?php esc_html_e( 'never (off)', 'formexposed' ); ?></option>
 			<?php foreach ( array( 90, 180, 365 ) as $formexposed_d ) : ?>
 				<option value="<?php echo (int) $formexposed_d; ?>" <?php selected( $formexposed_d, $formexposed_tage ); ?>><?php echo esc_html( sprintf( /* translators: %d: days */ __( '%d days', 'formexposed' ), $formexposed_d ) ); ?></option>
@@ -48,8 +48,8 @@ $formexposed_alt    = $formexposed_tage > 0 ? $formexposed_tage : 365;
 			<tr>
 				<td><strong><?php echo esc_html( $formexposed_name ); ?></strong><?php if ( '' !== $formexposed_hint ) : ?><br><span style="font-size:12px;color:#50575e"><?php echo esc_html( $formexposed_hint ); ?></span><?php endif; ?></td>
 				<td><?php echo (int) $formexposed_z['total']; ?></td>
-				<td><?php echo $formexposed_z['older'] ? '<strong style="color:#996800">' . (int) $formexposed_z['older'] . '</strong>' : '0'; ?></td>
-				<td><?php echo $formexposed_z['auto'] ? '<span style="color:#00750f">' . esc_html__( 'yes', 'formexposed' ) . '</span>' : esc_html__( 'no', 'formexposed' ); ?></td>
+				<td><?php if ( $formexposed_z['older'] ) : ?><strong style="color:#996800"><?php echo absint( $formexposed_z['older'] ); ?></strong><?php else : ?>0<?php endif; ?></td>
+				<td><?php if ( $formexposed_z['auto'] ) : ?><span style="color:#00750f"><?php esc_html_e( 'yes', 'formexposed' ); ?></span><?php else : ?><?php esc_html_e( 'no', 'formexposed' ); ?><?php endif; ?></td>
 			</tr>
 		<?php endforeach; ?>
 		</tbody>

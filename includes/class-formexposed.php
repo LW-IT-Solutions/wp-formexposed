@@ -335,7 +335,7 @@ class Formexposed_Core {
 				set_transient( 'formexposed_msg', array( 'error', $r->get_error_message() ), 120 );
 			} elseif ( is_array( $r ) ) {
 				/* translators: %s: name of the agency's workspace */
-				set_transient( 'formexposed_msg', array( 'ok', sprintf( __( 'Connected to "%s". Your agency now sees this site and its protection.', 'formexposed' ), isset( $r['workspace'] ) ? (string) $r['workspace'] : '' ) ), 120 );
+				set_transient( 'formexposed_msg', array( 'ok', sprintf( __( 'Connected to "%s". Your agency now sees this site and its protection.', 'formexposed' ), isset( $r['workspace'] ) ? sanitize_text_field( (string) $r['workspace'] ) : '' ) ), 120 );
 			}
 		}
 		wp_safe_redirect( self::page_url() );
@@ -402,7 +402,7 @@ class Formexposed_Core {
 			'secret'         => self::secret(),
 			'plugin_version' => FORMEXPOSED_VERSION,
 			'days'           => wp_json_encode( Formexposed_Stats::days() ),
-            'forms'          => wp_json_encode( Formexposed_Form_Metrics::days() ),
+			'forms'          => wp_json_encode( Formexposed_Form_Metrics::days() ),
 			'swarm'          => get_option( 'formexposed_swarm_off' ) ? '0' : '1',
 			'inventory'      => wp_json_encode( (object) Formexposed_Health::inventory() ),
 		);
@@ -576,7 +576,7 @@ class Formexposed_Core {
 			return new WP_Error( 'json', __( 'formexposed.com gave an unexpected answer. Please try again later.', 'formexposed' ) );
 		}
 		if ( isset( $j['status'] ) && in_array( $j['status'], array( 'error', 'unknown' ), true ) ) {
-			return new WP_Error( isset( $j['code'] ) ? (string) $j['code'] : 'api', isset( $j['message'] ) ? (string) $j['message'] : __( 'The check was refused.', 'formexposed' ) );
+			return new WP_Error( isset( $j['code'] ) ? sanitize_key( (string) $j['code'] ) : 'api', isset( $j['message'] ) ? sanitize_text_field( (string) $j['message'] ) : __( 'The check was refused.', 'formexposed' ) );
 		}
 		return $j;
 	}
@@ -596,17 +596,17 @@ class Formexposed_Core {
 		$neu = array(
 			'token'      => $last['token'],
 			'started_at' => isset( $last['started_at'] ) ? $last['started_at'] : time(),
-			'status'     => isset( $s['status'] ) ? (string) $s['status'] : 'unknown',
-			'report_url' => isset( $s['report_url'] ) ? (string) $s['report_url'] : ( isset( $last['report_url'] ) ? $last['report_url'] : '' ),
-			'reason'     => isset( $s['grund'] ) ? (string) $s['grund'] : '',
+			'status'     => isset( $s['status'] ) ? sanitize_key( (string) $s['status'] ) : 'unknown',
+			'report_url' => isset( $s['report_url'] ) ? esc_url_raw( (string) $s['report_url'] ) : ( isset( $last['report_url'] ) ? $last['report_url'] : '' ),
+			'reason'     => isset( $s['grund'] ) ? sanitize_text_field( (string) $s['grund'] ) : '',
 			'checked_at' => time(),
 		);
 		if ( 'done' === $neu['status'] ) {
 			$neu['score']   = isset( $s['score'] ) ? (int) $s['score'] : null;
-			$neu['level']   = isset( $s['level'] ) ? (string) $s['level'] : 'noform';
+			$neu['level']   = isset( $s['level'] ) ? sanitize_key( (string) $s['level'] ) : 'noform';
 			$neu['forms']   = isset( $s['forms'] ) ? (int) $s['forms'] : 0;
 			$neu['pages']   = isset( $s['pages'] ) ? (int) $s['pages'] : 0;
-			$neu['cms']     = isset( $s['cms'] ) ? (string) $s['cms'] : '';
+			$neu['cms']     = isset( $s['cms'] ) ? sanitize_text_field( (string) $s['cms'] ) : '';
 			$neu['missing'] = isset( $s['missing'] ) && is_array( $s['missing'] ) ? array_values( array_map( array( __CLASS__, 'clean_missing' ), $s['missing'] ) ) : array();
 			$neu['passed']  = isset( $s['passed'] ) && is_array( $s['passed'] ) ? array_map( 'sanitize_key', $s['passed'] ) : array();
 		}
@@ -629,7 +629,7 @@ class Formexposed_Core {
 		add_options_page( 'formexposed', 'formexposed', 'manage_options', 'formexposed', array( __CLASS__, 'page' ) );
 	}
 
-	/** assets/js/admin.js on our settings page only; it polls while the page shows a running check (#fe-wait). */
+	/** assets/js/admin.js on our settings page only; it polls while the page shows a running check (#formexposed-wait). */
 	public static function admin_assets( $hook ) {
 		if ( 'settings_page_formexposed' !== $hook ) {
 			return;
@@ -638,6 +638,10 @@ class Formexposed_Core {
 		wp_add_inline_script( 'formexposed-admin', 'window.formexposedAdmin = ' . wp_json_encode( array(
 			'ajax'  => admin_url( 'admin-ajax.php' ),
 			'nonce' => wp_create_nonce( 'formexposed_status' ),
+			'text'  => array(
+				'cancel'  => __( 'Cancel', 'formexposed' ),
+				'confirm' => __( 'Delete', 'formexposed' ),
+			),
 		) ) . ';', 'before' );
 	}
 
@@ -661,9 +665,9 @@ class Formexposed_Core {
 			set_transient( 'formexposed_msg', array( 'error', $r->get_error_message() ), 120 );
 		} else {
 			update_option( self::OPT_LAST, array(
-				'token'      => (string) $r['token'],
+				'token'      => sanitize_text_field( (string) $r['token'] ),
 				'status'     => 'queued',
-				'report_url' => (string) $r['report_url'],
+				'report_url' => esc_url_raw( (string) $r['report_url'] ),
 				'started_at' => time(),
 				'checked_at' => time(),
 			), false );
@@ -737,8 +741,8 @@ class Formexposed_Core {
 
 	/** The tab of the settings page that is shown (only selects the view, changes nothing). */
 	public static function tab() {
-		$tab = filter_input( INPUT_GET, 'tab', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) );
-		$tab = is_string( $tab ) ? sanitize_key( $tab ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only selects which tab is shown; nothing is changed.
+		$tab = isset( $_GET['tab'] ) && is_string( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
 		return in_array( $tab, array( 'quarantine', 'rescue', 'forms', 'storage', 'protect' ), true ) ? $tab : '';
 	}
 

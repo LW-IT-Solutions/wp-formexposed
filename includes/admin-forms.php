@@ -25,7 +25,7 @@ $formexposed_rc      = Formexposed_Recaptcha::details();
 	<p class="description"><?php esc_html_e( 'Settings of your forms that often cost enquiries or expose data - read on this site from Contact Form 7, WPForms, Gravity Forms, Elementor Pro, Fluent Forms and Formidable Forms. The form names and details stay here; a connected formexposed account only receives the numbers.', 'formexposed' ); ?></p>
 
 	<?php if ( is_array( $msg ) ) : ?>
-		<div class="notice notice-<?php echo 'ok' === $msg[0] ? 'success' : 'error'; ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
+		<div class="notice notice-<?php echo esc_attr( 'ok' === $msg[0] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
 	<?php endif; ?>
 
 	<div style="background:#fff;border:1px solid #c3c4c7;padding:16px 20px;margin:16px 0">
@@ -72,7 +72,7 @@ $formexposed_rc      = Formexposed_Recaptcha::details();
 		<table class="widefat striped" style="max-width:720px">
 			<tbody>
 			<?php foreach ( $formexposed_scan['listing'] as $formexposed_d ) : ?>
-				<tr><td><code>wp-content/uploads/<?php echo esc_html( $formexposed_d['dir'] ); ?>/</code></td>
+				<tr><td><code><?php echo esc_html( Formexposed_Health::uploads_rel() . $formexposed_d['dir'] . '/' ); ?></code></td>
 					<td><?php
 					switch ( $formexposed_d['state'] ) {
 						case 'listing':

@@ -25,10 +25,12 @@ class Formexposed_Form_Metrics {
 			if ( is_array( $s ) ) {
 				foreach ( $s as &$forms ) {
 					foreach ( $forms as &$counts ) {
-									unset( $counts['fields'] );
+						unset( $counts['fields'] );
 					}
-				}unset( $forms, $counts );
-				update_option( self::OPT, $s, false );}
+				}
+				unset( $forms, $counts );
+				update_option( self::OPT, $s, false );
+			}
 		}
 		if ( empty( $_POST['metrics_on'] ) ) {
 			delete_option( self::OPT );
@@ -37,12 +39,13 @@ class Formexposed_Form_Metrics {
 		exit;
 	}
 	public static function token( $day ) {
-		return hash_hmac( 'sha256', 'form-metrics|' . $day, wp_salt( 'auth' ) );}
+		return hash_hmac( 'sha256', 'form-metrics|' . $day, wp_salt( 'auth' ) );
+	}
 	public static function assets() {
-		if ( ! get_option( 'formexposed_metrics_on' ) || is_admin() || ! get_option( 'formexposed_linked' ) || ( null !== filter_input( INPUT_GET, 'formexposed_record', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) ) && current_user_can( 'manage_options' ) ) ) {
+		if ( ! get_option( 'formexposed_metrics_on' ) || is_admin() || ! get_option( 'formexposed_linked' ) || self::recording() ) {
 			return;
 		}
-		wp_enqueue_script( 'formexposed-metrics', plugins_url( '../assets/metrics.js', __FILE__ ), array(), FORMEXPOSED_VERSION, true );
+		wp_enqueue_script( 'formexposed-metrics', plugins_url( 'assets/metrics.js', FORMEXPOSED_FILE ), array(), FORMEXPOSED_VERSION, true );
 		wp_localize_script(
 			'formexposed-metrics',
 			'formexposedMetrics',
@@ -53,6 +56,12 @@ class Formexposed_Form_Metrics {
 			)
 		);
 	}
+	/** A site administrator is recording a check journey on this page (then no counters run). */
+	private static function recording() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only the presence of the parameter is read; the recorder runs for site administrators only.
+		return isset( $_GET['formexposed_record'] ) && current_user_can( 'manage_options' );
+	}
+
 	public static function routes() {
 		register_rest_route(
 			'formexposed/v1',
@@ -61,6 +70,38 @@ class Formexposed_Form_Metrics {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'receive' ),
 				'permission_callback' => array( __CLASS__, 'permission' ),
+				// Public by design (visitors count forms), so every parameter is typed, limited and sanitized here.
+				'args'                => array(
+					'token'    => array(
+						'type'              => 'string',
+						'required'          => true,
+						'pattern'           => '^[0-9a-f]{64}$',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'key'      => array(
+						'type'              => 'string',
+						'required'          => true,
+						'pattern'           => '^[0-9a-f]{64}$',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'event'    => array(
+						'type'              => 'string',
+						'required'          => true,
+						'enum'              => array_merge( self::EVENTS, array( 'field_invalid' ) ),
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'position' => array(
+						'type'              => 'integer',
+						'minimum'           => 1,
+						'maximum'           => 30,
+						'sanitize_callback' => 'absint',
+					),
+					'category' => array(
+						'type'              => 'string',
+						'enum'              => self::CATEGORIES,
+						'sanitize_callback' => 'sanitize_key',
+					),
+				),
 			)
 		);
 	}
@@ -93,9 +134,10 @@ class Formexposed_Form_Metrics {
 		$n   = (int) get_transient( $lim );
 		if ( $n >= 60 ) {
 			return new WP_Error( 'limited', __( 'Rate limited.', 'formexposed' ), array( 'status' => 429 ) );
-		}set_transient( $lim, $n + 1, 60 );
+		}
+		set_transient( $lim, $n + 1, 60 );
 		global $wpdb;
-		$lock = 'fe_metrics_' . substr( hash( 'sha256', home_url() ), 0, 32 );
+		$lock = 'formexposed_metrics_' . substr( hash( 'sha256', home_url() ), 0, 32 );
 		if ( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s,1)', $lock ) ) !== 1 ) {
 			return new WP_Error( 'busy', __( 'Try again.', 'formexposed' ), array( 'status' => 503 ) );
 		}
@@ -105,8 +147,9 @@ class Formexposed_Form_Metrics {
 			$s = get_option( self::OPT, array() );
 			if ( ! is_array( $s ) ) {
 				$s = array();
-			}$day = gmdate( 'Y-m-d' );
-			foreach ( array_keys( $s )as $d ) {
+			}
+			$day = gmdate( 'Y-m-d' );
+			foreach ( array_keys( $s ) as $d ) {
 				if ( $d < gmdate( 'Y-m-d', time() - 13 * DAY_IN_SECONDS ) ) {
 					unset( $s[ $d ] );
 				}
@@ -125,7 +168,8 @@ class Formexposed_Form_Metrics {
 			update_option( self::OPT, $s, false );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		} finally {
-			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );}
+			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
+		}
 	}
 	public static function days() {
 		if ( ! get_option( 'formexposed_metrics_on' ) ) {

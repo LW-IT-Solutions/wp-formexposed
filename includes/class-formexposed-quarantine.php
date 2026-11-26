@@ -203,7 +203,9 @@ class Formexposed_Quarantine {
 		if ( ! $row ) {
 			return array( false, __( 'This entry no longer exists.', 'formexposed' ) );
 		}
-		if(!empty($row['released_at']))return array(false,__('This message has already been released.','formexposed'));
+		if ( ! empty( $row['released_at'] ) ) {
+			return array( false, __( 'This message has already been released.', 'formexposed' ) );
+		}
 		$zeilen = array();
 		foreach ( (array) json_decode( (string) $row['fields'], true ) as $f ) {
 			$zeilen[] = $f[0] . ': ' . $f[1];
@@ -264,18 +266,25 @@ class Formexposed_Quarantine {
 			return;
 		}
 		$p = array(
-			__( 'Messages sent through our contact forms are checked for spam on this server. Messages that are held back as suspected spam are stored on this server for up to 14 days so that a message stopped by mistake can still be delivered, and are then deleted automatically. No message content is sent to third parties for this; formexposed.com only receives daily counts without personal data.', 'formexposed' ),
+			__( 'Messages sent through our contact forms are checked for spam on this server. Messages that are held back as suspected spam are stored on this server for up to 14 days so that a message stopped by mistake can still be delivered, and are then deleted automatically. The quarantine itself is not sent to anyone.', 'formexposed' ),
 			Formexposed_Rescue::privacy_paragraph(),
 			Formexposed_Protect::privacy_paragraph(),
 		);
 		if ( Formexposed_Pow::on() ) {
 			$p[] = __( 'To keep automated spam out, your browser solves a small calculation task when you use one of our forms (proof of work). It runs on this website only: no cookie is set and no data is sent to third parties for it.', 'formexposed' );
 		}
-        if(get_option('formexposed_metrics_on')){
-            $p[]=__('We optionally count form views, starts, validation errors and submit attempts without field contents, cookies or persistent visitor identifiers. Counts are kept locally for 14 days and, while connected, transferred daily to formexposed.com, where the account retention period applies. Client success signals do not establish mailbox or CRM delivery. A short local IP-derived rate-limit key expires after a minute and is not transferred.','formexposed');
-            if(get_option('formexposed_field_metrics_on'))$p[]=__('Optional detailed counts identify a field by its position and a validation category only. No field names, entered values or individual visitor histories are collected.','formexposed');
-        }
-        if(get_option('formexposed_recovery_on'))$p[]=__('After an offline or supported form error, a helper offers a return to the existing open form and an optional email contact. The helper reads no field values, stores no drafts and performs no automatic resend.','formexposed');
+		if ( get_option( 'formexposed_metrics_on' ) ) {
+			$p[] = __( 'We optionally count form views, starts, validation errors and submit attempts without field contents, cookies or persistent visitor identifiers. Counts are kept locally for 14 days and, while connected, transferred daily to formexposed.com, where the account retention period applies. Client success signals do not establish mailbox or CRM delivery. A short local IP-derived rate-limit key expires after a minute and is not transferred.', 'formexposed' );
+			if ( get_option( 'formexposed_field_metrics_on' ) ) {
+				$p[] = __( 'Optional detailed counts identify a field by its position and a validation category only. No field names, entered values or individual visitor histories are collected.', 'formexposed' );
+			}
+		}
+		if ( get_option( 'formexposed_recovery_on' ) ) {
+			$p[] = __( 'After an offline or supported form error, a helper offers a return to the existing open form and an optional email contact. The helper reads no field values, stores no drafts and performs no automatic resend.', 'formexposed' );
+		}
+		if ( Formexposed_Core::linked() ) {
+			$p[] = __( 'This site is connected to formexposed.com (LW IT Solutions), which monitors the protection of our forms. It receives daily counts (for example blocked and accepted submissions, sent and failed e-mails) and technical details about the form, CAPTCHA and mail plugins in use. With swarm protection on, it also receives the domain names of links found in stopped messages. It receives no e-mail addresses, names or message content.', 'formexposed' );
+		}
 		$p[]  = Formexposed_Retention::privacy_paragraph();
 		$html = '';
 		foreach ( array_filter( $p ) as $absatz ) {

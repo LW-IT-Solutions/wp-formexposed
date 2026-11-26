@@ -111,6 +111,7 @@ class Formexposed_Rescue {
 			add_action( 'admin_post_formexposed_r_delete', array( __CLASS__, 'action_delete' ) );
 			add_action( 'admin_post_formexposed_r_setting', array( __CLASS__, 'action_setting' ) );
 			add_action( 'admin_notices', array( __CLASS__, 'notice' ) );
+			add_action( 'admin_post_formexposed_rescue_hide', array( __CLASS__, 'action_hide' ) );
 		}
 	}
 
@@ -560,12 +561,30 @@ class Formexposed_Rescue {
 		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins', 'settings_page_formexposed' ), true ) ) {
 			return;
 		}
-		if ( 'formexposed' === filter_input( INPUT_GET, 'page', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) ) && 'rescue' === Formexposed_Core::tab() ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only decides whether the notice is shown on this page.
+		$page = isset( $_GET['page'] ) && is_string( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		if ( 'formexposed' === $page && 'rescue' === Formexposed_Core::tab() ) {
 			return;
 		}
+		if ( get_transient( 'formexposed_rescue_hide_' . get_current_user_id() ) ) {
+			return;
+		}
+		$hide = wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_rescue_hide' ), 'formexposed_rescue_hide' );
 		/* translators: %d: number of enquiries */
 		echo '<div class="notice notice-error"><p><strong>formexposed:</strong> ' . esc_html( sprintf( _n( '%d enquiry from a form could not be sent by e-mail. It is kept on this site.', '%d enquiries from forms could not be sent by e-mail. They are kept on this site.', $n, 'formexposed' ), $n ) )
-			. ' <a href="' . esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue' ) ) ) . '">' . esc_html__( 'See them and send them again', 'formexposed' ) . '</a></p></div>';
+			. ' <a href="' . esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue' ) ) ) . '">' . esc_html__( 'See them and send them again', 'formexposed' ) . '</a>'
+			. ' · <a href="' . esc_url( $hide ) . '">' . esc_html__( 'Hide for a day', 'formexposed' ) . '</a></p></div>';
+	}
+
+	/** "Hide for a day" of the notice above, for the current user only. */
+	public static function action_hide() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Not allowed.', 'formexposed' ) );
+		}
+		check_admin_referer( 'formexposed_rescue_hide' );
+		set_transient( 'formexposed_rescue_hide_' . get_current_user_id(), 1, DAY_IN_SECONDS );
+		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url() );
+		exit;
 	}
 
 	/** A paragraph for the privacy policy guide (Formexposed_Quarantine::privacy_text). */
