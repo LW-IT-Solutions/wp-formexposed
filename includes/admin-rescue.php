@@ -14,7 +14,7 @@ $formexposed_zahl    = Formexposed_Rescue::count_waiting();
 $formexposed_quellen = array( 'cf7' => 'Contact Form 7', 'wpforms' => 'WPForms', 'gravityforms' => 'Gravity Forms', 'elementor' => 'Elementor' );
 $formexposed_bericht = get_option( Formexposed_Rescue::OPT_LAST );
 ?>
-<div class="wrap" style="max-width:980px">
+<div class="wrap formexposed-wrap">
 	<h1>formexposed · <?php esc_html_e( 'Rescued enquiries', 'formexposed' ); ?></h1>
 	<?php Formexposed_Core::nav( 'rescue' ); ?>
 	<p class="description"><?php echo esc_html( sprintf( /* translators: %d: days */ __( 'When the e-mail a form sends to you could not be handed over (wrong SMTP login, mail server down, no mail function on the server), the enquiry would be lost. formexposed keeps a copy of that e-mail here for %d days: recipient, subject, text, headers - attached files only by name. "Send again" hands it to WordPress once more; when that works, the copy is removed. Nothing of this leaves your server.', 'formexposed' ), Formexposed_Rescue::DAYS ) ); ?></p>
@@ -23,14 +23,14 @@ $formexposed_bericht = get_option( Formexposed_Rescue::OPT_LAST );
 		<div class="notice notice-<?php echo esc_attr( 'ok' === $msg[0] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
 	<?php endif; ?>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-option">
 		<input type="hidden" name="action" value="formexposed_r_setting">
 		<?php wp_nonce_field( 'formexposed_r_setting' ); ?>
 		<label><input type="checkbox" name="keep_on" value="1" <?php checked( Formexposed_Rescue::on() ); ?>>
 			<strong><?php esc_html_e( 'Keep enquiries whose e-mail failed', 'formexposed' ); ?></strong> - <?php esc_html_e( 'Contact Form 7, WPForms, Gravity Forms and Elementor Pro forms.', 'formexposed' ); ?></label>
-		<button class="button button-small" style="margin-left:6px"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
+		<button class="button button-small"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
 		<?php if ( Formexposed_Core::linked() ) : ?>
-			<br><span style="color:#50575e;font-size:12px"><?php esc_html_e( 'formexposed.com is told at once when a form e-mail fails (at most once an hour; only the kind of error, no content), so you hear about it even without looking here.', 'formexposed' ); ?>
+			<br><span class="fx-small"><?php esc_html_e( 'formexposed.com is told at once when a form e-mail fails (at most once an hour; only the kind of error, no content), so you hear about it even without looking here.', 'formexposed' ); ?>
 			<?php if ( is_array( $formexposed_bericht ) && ! empty( $formexposed_bericht['at'] ) ) : ?>
 				<?php echo esc_html( sprintf( /* translators: %s: date */ __( 'Last report: %s.', 'formexposed' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $formexposed_bericht['at'] ) ) ); ?>
 			<?php endif; ?></span>
@@ -38,18 +38,18 @@ $formexposed_bericht = get_option( Formexposed_Rescue::OPT_LAST );
 	</form>
 
 	<?php if ( ! $formexposed_liste ) : ?>
-		<div style="background:#fff;border:1px solid #c3c4c7;padding:16px 20px;margin:16px 0"><p style="margin:0"><?php esc_html_e( 'No enquiry is waiting. Every form e-mail went out.', 'formexposed' ); ?></p></div>
+		<div class="fx-card is-ok"><p class="fx-empty"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><?php esc_html_e( 'No enquiry is waiting. Every form e-mail went out.', 'formexposed' ); ?></p></div>
 	<?php else : ?>
-		<p><?php echo esc_html( sprintf( /* translators: %d: number of entries */ _n( '%d enquiry waiting.', '%d enquiries waiting.', $formexposed_zahl, 'formexposed' ), $formexposed_zahl ) ); ?>
-			<a class="button button-primary" style="margin-left:8px" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_r_resend&all=1' ), 'formexposed_r_resend' ) ); ?>"><?php esc_html_e( 'Send all again', 'formexposed' ); ?></a>
+		<p class="fx-inline-form"><span class="fx-badge is-bad"><?php echo esc_html( sprintf( /* translators: %d: number of entries */ _n( '%d enquiry waiting.', '%d enquiries waiting.', $formexposed_zahl, 'formexposed' ), $formexposed_zahl ) ); ?></span>
+			<a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_r_resend&all=1' ), 'formexposed_r_resend' ) ); ?>"><?php esc_html_e( 'Send all again', 'formexposed' ); ?></a>
 			<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_r_delete&all=1' ), 'formexposed_r_delete' ) ); ?>" data-formexposed-confirm="<?php esc_attr_e( 'Delete all rescued enquiries? They cannot be sent again afterwards.', 'formexposed' ); ?>"><?php esc_html_e( 'Delete all', 'formexposed' ); ?></a></p>
-		<p style="color:#50575e;font-size:12px"><?php esc_html_e( 'Fix the mail settings first (an SMTP plugin with a working login, for example) - otherwise "Send again" fails the same way.', 'formexposed' ); ?></p>
-		<div style="overflow-x:auto"><table class="widefat striped">
+		<p class="fx-small"><?php esc_html_e( 'Fix the mail settings first (an SMTP plugin with a working login, for example) - otherwise "Send again" fails the same way.', 'formexposed' ); ?></p>
+		<div class="fx-scroll" style="overflow-x:auto"><table class="widefat striped fx-table">
 			<thead><tr>
 				<th style="width:130px"><?php esc_html_e( 'Received', 'formexposed' ); ?></th>
 				<th><?php esc_html_e( 'Form, recipient and content', 'formexposed' ); ?></th>
 				<th style="width:220px"><?php esc_html_e( 'Why it failed', 'formexposed' ); ?></th>
-				<th style="width:170px"></th>
+				<th style="width:170px"><span class="screen-reader-text"><?php esc_html_e( 'Actions', 'formexposed' ); ?></span></th>
 			</tr></thead>
 			<tbody>
 			<?php
@@ -61,8 +61,8 @@ $formexposed_bericht = get_option( Formexposed_Rescue::OPT_LAST );
 				$formexposed_text   = $formexposed_html ? wp_strip_all_tags( preg_replace( '~<(br|/p|/div|/tr)\s*/?>~i', "\n", (string) $formexposed_e['message'] ) ) : (string) $formexposed_e['message'];
 				?>
 				<tr>
-					<td><?php echo esc_html( get_date_from_gmt( $formexposed_e['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) ); ?></td>
-					<td>
+					<td data-label="<?php esc_attr_e( 'Received', 'formexposed' ); ?>"><?php echo esc_html( get_date_from_gmt( $formexposed_e['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) ); ?></td>
+					<td data-label="<?php esc_attr_e( 'Form, recipient and content', 'formexposed' ); ?>">
 						<strong><?php echo esc_html( $formexposed_e['form'] ); ?></strong> <span style="color:#646970">· <?php echo esc_html( isset( $formexposed_quellen[ $formexposed_e['source'] ] ) ? $formexposed_quellen[ $formexposed_e['source'] ] : $formexposed_e['source'] ); ?></span><br>
 						<?php esc_html_e( 'To:', 'formexposed' ); ?> <?php echo esc_html( implode( ', ', $formexposed_an ) ); ?>
 						<?php if ( '' !== $formexposed_antw ) : ?><br><?php esc_html_e( 'Reply-To:', 'formexposed' ); ?> <?php echo esc_html( $formexposed_antw ); ?><?php endif; ?>
@@ -73,22 +73,22 @@ $formexposed_bericht = get_option( Formexposed_Rescue::OPT_LAST );
 							<?php endif; ?>
 						</details>
 					</td>
-					<td><?php echo esc_html( ucfirst( Formexposed_Rescue::kind_text( $formexposed_e['error_kind'] ) ) ); ?>
+					<td data-label="<?php esc_attr_e( 'Why it failed', 'formexposed' ); ?>"><span class="fx-badge is-bad"><?php echo esc_html( ucfirst( Formexposed_Rescue::kind_text( $formexposed_e['error_kind'] ) ) ); ?></span>
 						<?php if ( (int) $formexposed_e['attempts'] > 0 ) : ?>
-							<br><span style="color:#646970;font-size:12px"><?php echo esc_html( sprintf( /* translators: %d: number of attempts */ _n( '%d more attempt failed', '%d more attempts failed', (int) $formexposed_e['attempts'], 'formexposed' ), (int) $formexposed_e['attempts'] ) ); ?></span>
+							<span class="fx-reason-text"><?php echo esc_html( sprintf( /* translators: %d: number of attempts */ _n( '%d more attempt failed', '%d more attempts failed', (int) $formexposed_e['attempts'], 'formexposed' ), (int) $formexposed_e['attempts'] ) ); ?></span>
 						<?php endif; ?>
 					</td>
-					<td>
+					<td class="fx-row-actions">
 						<a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_r_resend&id=' . (int) $formexposed_e['id'] ), 'formexposed_r_resend' ) ); ?>"><?php esc_html_e( 'Send again', 'formexposed' ); ?></a>
-						<a class="button button-small button-link-delete" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_r_delete&id=' . (int) $formexposed_e['id'] ), 'formexposed_r_delete' ) ); ?>"><?php esc_html_e( 'Delete', 'formexposed' ); ?></a>
+						<a class="button button-small button-link-delete" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_r_delete&id=' . (int) $formexposed_e['id'] ), 'formexposed_r_delete' ) ); ?>" data-formexposed-confirm="<?php esc_attr_e( 'Delete this rescued enquiry? It cannot be sent again afterwards.', 'formexposed' ); ?>"><?php esc_html_e( 'Delete', 'formexposed' ); ?></a>
 					</td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
 		</table></div>
-		<p>
-			<?php if ( $formexposed_seite > 1 ) : ?><a class="button" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue', 'paged' => $formexposed_seite - 1 ) ) ); ?>">&larr;</a><?php endif; ?>
-			<?php if ( 50 === count( $formexposed_liste ) ) : ?><a class="button" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue', 'paged' => $formexposed_seite + 1 ) ) ); ?>">&rarr;</a><?php endif; ?>
+		<p class="fx-pager">
+			<?php if ( $formexposed_seite > 1 ) : ?><a class="button" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue', 'paged' => $formexposed_seite - 1 ) ) ); ?>"><span aria-hidden="true">&larr;</span> <?php esc_html_e( 'Newer', 'formexposed' ); ?></a><?php endif; ?>
+			<?php if ( 50 === count( $formexposed_liste ) ) : ?><a class="button" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue', 'paged' => $formexposed_seite + 1 ) ) ); ?>"><?php esc_html_e( 'Older', 'formexposed' ); ?> <span aria-hidden="true">&rarr;</span></a><?php endif; ?>
 		</p>
 	<?php endif; ?>
 </div>

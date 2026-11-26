@@ -16,11 +16,13 @@ $formexposed_fertig = 'done' === $formexposed_status;
 $formexposed_level  = isset( $last['level'] ) ? $last['level'] : '';
 list( $formexposed_farbe, $formexposed_titel, $formexposed_satz ) = Formexposed_Core::level_text( $formexposed_level );
 $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_check' ), 'formexposed_check' );
+$formexposed_stufe     = array( 'exposed' => 'is-bad', 'partial' => 'is-warn', 'protected' => 'is-ok' );
+$formexposed_karte     = $formexposed_fertig ? ( isset( $formexposed_stufe[ $formexposed_level ] ) ? $formexposed_stufe[ $formexposed_level ] : '' ) : 'is-info';
 ?>
-<div class="wrap" style="max-width:820px">
+<div class="wrap formexposed-wrap">
 	<h1>formexposed</h1>
 	<?php Formexposed_Core::nav( '' ); ?>
-	<p class="description"><?php esc_html_e( 'Checks whether the contact forms on this site are protected against bots and spam. The service loads a few of your public pages and looks at the forms - it never submits one.', 'formexposed' ); ?></p>
+	<p class="description fx-narrow"><?php esc_html_e( 'Checks whether the contact forms on this site are protected against bots and spam. The service loads a few of your public pages and looks at the forms - it never submits one.', 'formexposed' ); ?></p>
 
 	<?php if ( is_array( $msg ) ) : ?>
 		<div class="notice notice-<?php echo esc_attr( 'ok' === $msg[0] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>
@@ -29,40 +31,53 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 		<div class="notice notice-error"><p><?php echo esc_html( $last['error'] ); ?></p></div>
 	<?php endif; ?>
 
-	<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid <?php echo esc_attr( $formexposed_fertig ? $formexposed_farbe : '#2271b1' ); ?>;padding:16px 20px;margin:16px 0">
+	<div class="fx-card <?php echo esc_attr( $formexposed_karte ); ?>">
 		<?php if ( '' === $formexposed_status ) : ?>
-			<h2 style="margin-top:0"><?php esc_html_e( 'Not checked yet', 'formexposed' ); ?></h2>
+			<h2><?php esc_html_e( 'Not checked yet', 'formexposed' ); ?></h2>
 			<p><?php echo esc_html( sprintf( /* translators: %s: host name */ __( 'Run the first check for %s. It takes a minute or two and does not change anything on your site.', 'formexposed' ), Formexposed_Core::host() ) ); ?></p>
 			<p><a class="button button-primary" href="<?php echo esc_url( $formexposed_check_url ); ?>"><?php esc_html_e( 'Check now', 'formexposed' ); ?></a></p>
 
 		<?php elseif ( $formexposed_laeuft ) : ?>
-			<h2 style="margin-top:0" id="formexposed-wait"><?php esc_html_e( 'Checking …', 'formexposed' ); ?></h2>
+			<h2 id="formexposed-wait"><span class="spinner is-active" style="float:none;margin:-2px 8px 0 0" aria-hidden="true"></span><?php esc_html_e( 'Checking …', 'formexposed' ); ?></h2>
 			<p><?php esc_html_e( 'The service is loading your pages. This page refreshes itself when the result is in.', 'formexposed' ); ?></p>
 			<?php // assets/js/admin.js polls admin-ajax (formexposed_status) and reloads the page once the check is done - see Formexposed_Core::admin_assets(). ?>
 
 		<?php elseif ( $formexposed_fertig ) : ?>
-			<h2 style="margin-top:0;color:<?php echo esc_attr( $formexposed_farbe ); ?>"><?php echo esc_html( $formexposed_titel ); ?>
+			<div class="fx-result">
 				<?php if ( isset( $last['score'] ) && 'noform' !== $formexposed_level ) : ?>
-					<span style="font-weight:normal;color:#50575e;font-size:14px"> · <?php echo esc_html( sprintf( /* translators: %d: score 0-100 */ __( 'risk score %d / 100', 'formexposed' ), (int) $last['score'] ) ); ?></span>
+					<?php
+					$formexposed_score = max( 0, min( 100, (int) $last['score'] ) );
+					$formexposed_umfang = 2 * M_PI * 42;
+					?>
+					<div class="fx-ring" style="<?php echo esc_attr( 'color:' . $formexposed_farbe ); ?>" role="img" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: score 0-100 */ __( 'risk score %d / 100', 'formexposed' ), $formexposed_score ) ); ?>">
+						<svg viewBox="0 0 104 104" aria-hidden="true" focusable="false">
+							<circle class="fx-ring-track" cx="52" cy="52" r="42"></circle>
+							<circle class="fx-ring-value" cx="52" cy="52" r="42" stroke-dasharray="<?php echo esc_attr( round( $formexposed_umfang * $formexposed_score / 100, 2 ) . ' ' . round( $formexposed_umfang, 2 ) ); ?>"></circle>
+						</svg>
+						<span class="fx-ring-label" aria-hidden="true"><strong><?php echo esc_html( number_format_i18n( $formexposed_score ) ); ?></strong><span><?php esc_html_e( 'risk / 100', 'formexposed' ); ?></span></span>
+					</div>
 				<?php endif; ?>
-			</h2>
-			<p><?php echo esc_html( $formexposed_satz ); ?></p>
-			<?php if ( ! empty( $last['missing'] ) ) : ?>
-				<h3><?php esc_html_e( 'What is missing', 'formexposed' ); ?></h3>
-				<ul style="list-style:disc;padding-left:20px">
-				<?php foreach ( $last['missing'] as $formexposed_m ) : ?>
-					<li><strong><?php echo esc_html( $formexposed_m['title'] ); ?></strong><br><?php echo esc_html( '' !== $formexposed_m['cms'] ? $formexposed_m['cms'] : $formexposed_m['general'] ); ?></li>
-				<?php endforeach; ?>
-				</ul>
-			<?php endif; ?>
-			<p style="color:#50575e;font-size:12px"><?php echo esc_html( sprintf( /* translators: 1: pages, 2: forms, 3: date */ __( '%1$d pages loaded, %2$d forms found, checked on %3$s.', 'formexposed' ), (int) $last['pages'], (int) $last['forms'], wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $last['checked_at'] ) ) ); ?></p>
-			<p>
-				<a class="button button-primary" href="<?php echo esc_url( $last['report_url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open the full report', 'formexposed' ); ?></a>
-				<a class="button" href="<?php echo esc_url( $formexposed_check_url ); ?>"><?php esc_html_e( 'Check again', 'formexposed' ); ?></a>
-			</p>
+				<div>
+					<h2 class="fx-level" style="<?php echo esc_attr( 'color:' . $formexposed_farbe ); ?>"><?php echo esc_html( $formexposed_titel ); ?></h2>
+					<p><?php echo esc_html( $formexposed_satz ); ?></p>
+					<?php if ( ! empty( $last['missing'] ) ) : ?>
+						<h3><?php esc_html_e( 'What is missing', 'formexposed' ); ?></h3>
+						<ul class="fx-missing">
+						<?php foreach ( $last['missing'] as $formexposed_m ) : ?>
+							<li><span class="dashicons dashicons-warning" aria-hidden="true"></span><span><strong><?php echo esc_html( $formexposed_m['title'] ); ?></strong><br><?php echo esc_html( '' !== $formexposed_m['cms'] ? $formexposed_m['cms'] : $formexposed_m['general'] ); ?></span></li>
+						<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+					<p class="fx-small"><?php echo esc_html( sprintf( /* translators: 1: pages, 2: forms, 3: date */ __( '%1$d pages loaded, %2$d forms found, checked on %3$s.', 'formexposed' ), (int) $last['pages'], (int) $last['forms'], wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $last['checked_at'] ) ) ); ?></p>
+					<p>
+						<a class="button button-primary" href="<?php echo esc_url( $last['report_url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open the full report', 'formexposed' ); ?></a>
+						<a class="button" href="<?php echo esc_url( $formexposed_check_url ); ?>"><?php esc_html_e( 'Check again', 'formexposed' ); ?></a>
+					</p>
+				</div>
+			</div>
 
 		<?php else : ?>
-			<h2 style="margin-top:0"><?php esc_html_e( 'The check could not be completed', 'formexposed' ); ?></h2>
+			<h2><?php esc_html_e( 'The check could not be completed', 'formexposed' ); ?></h2>
 			<p><?php echo esc_html( ! empty( $last['reason'] ) ? $last['reason'] : __( 'Please try again later.', 'formexposed' ) ); ?></p>
 			<p><a class="button button-primary" href="<?php echo esc_url( $formexposed_check_url ); ?>"><?php esc_html_e( 'Try again', 'formexposed' ); ?></a></p>
 		<?php endif; ?>
@@ -77,46 +92,131 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 	$formexposed_q       = Formexposed_Quarantine::count_open();
 	$formexposed_swarm   = get_option( 'formexposed_swarm' );
 	$formexposed_swarm_n = is_array( $formexposed_swarm ) && isset( $formexposed_swarm['links'] ) ? count( (array) $formexposed_swarm['links'] ) : 0;
+	$formexposed_rw      = Formexposed_Rescue::count_waiting();
+
+	// The counts of the last 14 days, as they are stored on this site (Formexposed_Stats). Nothing is fetched.
+	$formexposed_tage   = Formexposed_Stats::days();
+	$formexposed_serie  = array();
+	$formexposed_gruende = array();
+	$formexposed_mails  = array( 0, 0 );
+	foreach ( $formexposed_tage as $formexposed_tag ) {
+		$formexposed_serie[ $formexposed_tag['day'] ] = array_sum( $formexposed_tag['blocked'] );
+		foreach ( $formexposed_tag['blocked'] as $formexposed_grund => $formexposed_n ) {
+			$formexposed_gruende[ $formexposed_grund ] = ( isset( $formexposed_gruende[ $formexposed_grund ] ) ? $formexposed_gruende[ $formexposed_grund ] : 0 ) + (int) $formexposed_n;
+		}
+		$formexposed_mails[0] += $formexposed_tag['mail_sent'];
+		$formexposed_mails[1] += $formexposed_tag['mail_failed'];
+	}
+	arsort( $formexposed_gruende );
+	$formexposed_balken = array();
+	for ( $formexposed_i = Formexposed_Stats::DAYS - 1; $formexposed_i >= 0; $formexposed_i-- ) {
+		$formexposed_d                        = gmdate( 'Y-m-d', time() - $formexposed_i * DAY_IN_SECONDS );
+		$formexposed_balken[ $formexposed_d ] = isset( $formexposed_serie[ $formexposed_d ] ) ? $formexposed_serie[ $formexposed_d ] : 0;
+	}
+	$formexposed_max = max( 1, max( $formexposed_balken ) );
 	?>
-	<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid <?php echo esc_attr( $formexposed_guard ? '#00750f' : '#2271b1' ); ?>;padding:16px 20px;margin:16px 0">
-		<h2 style="margin-top:0"><?php esc_html_e( 'Fix it for me', 'formexposed' ); ?>
-			<span style="font-weight:normal;color:#50575e;font-size:13px"> · <?php esc_html_e( 'free, runs on your server only', 'formexposed' ); ?></span></h2>
+	<?php if ( $formexposed_guard || $formexposed_blocked || $formexposed_q || $formexposed_rw ) : ?>
+	<div class="fx-card is-quiet">
+		<h2><?php esc_html_e( 'The last 14 days on this site', 'formexposed' ); ?></h2>
+		<div class="fx-tiles">
+			<a class="fx-tile" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'quarantine' ) ) ); ?>">
+				<span class="fx-tile-label"><?php esc_html_e( 'Submissions blocked', 'formexposed' ); ?></span>
+				<span class="fx-tile-value"><?php echo esc_html( number_format_i18n( $formexposed_blocked ) ); ?></span>
+				<span class="fx-tile-note"><?php echo esc_html( $formexposed_guard ? __( 'protection layer on', 'formexposed' ) : __( 'protection layer off', 'formexposed' ) ); ?></span>
+			</a>
+			<a class="fx-tile <?php echo esc_attr( $formexposed_q ? 'is-warn' : 'is-ok' ); ?>" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'quarantine' ) ) ); ?>">
+				<span class="fx-tile-label"><?php esc_html_e( 'Quarantine', 'formexposed' ); ?></span>
+				<span class="fx-tile-value"><?php echo esc_html( number_format_i18n( $formexposed_q ) ); ?></span>
+				<span class="fx-tile-note"><?php esc_html_e( 'messages to review', 'formexposed' ); ?></span>
+			</a>
+			<a class="fx-tile <?php echo esc_attr( $formexposed_rw ? 'is-bad' : 'is-ok' ); ?>" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue' ) ) ); ?>">
+				<span class="fx-tile-label"><?php esc_html_e( 'Rescued enquiries', 'formexposed' ); ?></span>
+				<span class="fx-tile-value"><?php echo esc_html( number_format_i18n( $formexposed_rw ) ); ?></span>
+				<span class="fx-tile-note"><?php esc_html_e( 'e-mails that failed', 'formexposed' ); ?></span>
+			</a>
+			<div class="fx-tile <?php echo esc_attr( $formexposed_mails[1] ? 'is-warn' : 'is-ok' ); ?>">
+				<span class="fx-tile-label"><?php esc_html_e( 'E-mails sent', 'formexposed' ); ?></span>
+				<span class="fx-tile-value"><?php echo esc_html( number_format_i18n( $formexposed_mails[0] ) ); ?></span>
+				<span class="fx-tile-note"><?php echo esc_html( sprintf( /* translators: %d: number of failed e-mails */ _n( '%d failed', '%d failed', $formexposed_mails[1], 'formexposed' ), $formexposed_mails[1] ) ); ?></span>
+			</div>
+		</div>
+		<div class="fx-chart-wrap">
+			<div>
+				<h3 id="formexposed-chart-title"><?php esc_html_e( 'Blocked submissions per day', 'formexposed' ); ?></h3>
+				<div class="fx-bars" aria-hidden="true">
+					<?php foreach ( $formexposed_balken as $formexposed_d => $formexposed_n ) : ?>
+						<span class="fx-bar<?php echo esc_attr( ( $formexposed_n ? '' : ' is-zero' ) . ( gmdate( 'Y-m-d' ) === $formexposed_d ? ' is-today' : '' ) ); ?>" style="<?php echo esc_attr( 'height:' . max( 2, round( $formexposed_n / $formexposed_max * 100 ) ) . '%' ); ?>" title="<?php echo esc_attr( wp_date( get_option( 'date_format' ), strtotime( $formexposed_d . ' 12:00:00 UTC' ) ) . ': ' . $formexposed_n ); ?>"></span>
+					<?php endforeach; ?>
+				</div>
+				<div class="fx-axis" aria-hidden="true"><span><?php echo esc_html( wp_date( 'j M', strtotime( array_key_first( $formexposed_balken ) . ' 12:00:00 UTC' ) ) ); ?></span><span><?php echo esc_html( sprintf( /* translators: %s: highest number of blocked submissions on one day */ __( 'highest: %s per day', 'formexposed' ), number_format_i18n( max( $formexposed_balken ) ) ) ); ?></span><span><?php esc_html_e( 'today', 'formexposed' ); ?></span></div>
+				<table class="screen-reader-text">
+					<caption><?php esc_html_e( 'Blocked submissions per day', 'formexposed' ); ?></caption>
+					<tbody>
+					<?php foreach ( $formexposed_balken as $formexposed_d => $formexposed_n ) : ?>
+						<tr><th scope="row"><?php echo esc_html( wp_date( get_option( 'date_format' ), strtotime( $formexposed_d . ' 12:00:00 UTC' ) ) ); ?></th><td><?php echo esc_html( number_format_i18n( $formexposed_n ) ); ?></td></tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+			<div>
+				<h3><?php esc_html_e( 'Why they were stopped', 'formexposed' ); ?></h3>
+				<?php if ( ! $formexposed_gruende ) : ?>
+					<p class="fx-small"><?php esc_html_e( 'Nothing was stopped in these days.', 'formexposed' ); ?></p>
+				<?php else : ?>
+					<ul class="fx-reasons">
+					<?php
+					$formexposed_top = max( 1, reset( $formexposed_gruende ) );
+					foreach ( array_slice( $formexposed_gruende, 0, 6, true ) as $formexposed_grund => $formexposed_n ) :
+						?>
+						<li><span><?php echo esc_html( Formexposed_Stats::reason_label( $formexposed_grund ) ); ?></span><span class="fx-num"><?php echo esc_html( number_format_i18n( $formexposed_n ) ); ?></span><span class="fx-reason-track" aria-hidden="true"><span class="fx-reason-fill" style="<?php echo esc_attr( 'width:' . max( 3, round( $formexposed_n / $formexposed_top * 100 ) ) . '%' ); ?>"></span></span></li>
+					<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
+			</div>
+		</div>
+	</div>
+	<?php endif; ?>
+
+	<div class="fx-card <?php echo esc_attr( $formexposed_guard ? 'is-ok' : 'is-info' ); ?>">
+		<h2><?php esc_html_e( 'Fix it for me', 'formexposed' ); ?>
+			<span class="fx-sub"> · <?php esc_html_e( 'free, runs on your server only', 'formexposed' ); ?></span></h2>
 		<?php if ( $formexposed_testkey ) : ?>
 			<div class="notice notice-error inline"><p><strong><?php esc_html_e( 'Contact Form 7 uses a Google reCAPTCHA TEST key.', 'formexposed' ); ?></strong> <?php esc_html_e( 'A test key lets every submission pass - the CAPTCHA protects nothing.', 'formexposed' ); ?>
 				<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_testkey' ), 'formexposed_testkey' ) ); ?>"><?php esc_html_e( 'Remove the test key and protect the forms', 'formexposed' ); ?></a></p></div>
 		<?php endif; ?>
 		<?php if ( $formexposed_guard ) : ?>
-			<p><strong style="color:#00750f"><?php esc_html_e( 'Protection is on.', 'formexposed' ); ?></strong>
+			<p><span class="fx-badge is-ok"><span class="dashicons dashicons-shield" aria-hidden="true" style="font-size:16px;width:16px;height:16px;vertical-align:-3px"></span> <?php esc_html_e( 'Protection is on.', 'formexposed' ); ?></span>
 				<?php
 				if ( is_array( $formexposed_opt ) && ! empty( $formexposed_opt['since'] ) ) {
 					echo esc_html( sprintf( /* translators: %s: date */ __( 'Since %s.', 'formexposed' ), wp_date( get_option( 'date_format' ), (int) $formexposed_opt['since'] ) ) ); }
 				?>
 				<?php echo esc_html( sprintf( /* translators: %d: number of submissions */ _n( '%d submission blocked in the last 14 days.', '%d submissions blocked in the last 14 days.', $formexposed_blocked, 'formexposed' ), $formexposed_blocked ) ); ?></p>
-			<p style="color:#50575e"><?php echo esc_html( sprintf( /* translators: %s: list of form plugins */ __( 'Protected here: %s.', 'formexposed' ), $formexposed_plugins ? implode( ', ', $formexposed_plugins ) : __( 'none of the supported form plugins is active', 'formexposed' ) ) ); ?></p>
-			<p><a class="button" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'quarantine' ) ) ); ?>"><?php echo esc_html( sprintf( /* translators: %d: number of messages */ _n( 'Quarantine: %d message held back', 'Quarantine: %d messages held back', $formexposed_q, 'formexposed' ), $formexposed_q ) ); ?></a>
-				<span style="color:#50575e;font-size:12px"><?php esc_html_e( 'Stopped by mistake? Deliver it from there with one click.', 'formexposed' ); ?></span></p>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde">
+			<p class="fx-text-muted"><?php echo esc_html( sprintf( /* translators: %s: list of form plugins */ __( 'Protected here: %s.', 'formexposed' ), $formexposed_plugins ? implode( ', ', $formexposed_plugins ) : __( 'none of the supported form plugins is active', 'formexposed' ) ) ); ?></p>
+			<p class="fx-inline-form"><a class="button" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'quarantine' ) ) ); ?>"><?php echo esc_html( sprintf( /* translators: %d: number of messages */ _n( 'Quarantine: %d message held back', 'Quarantine: %d messages held back', $formexposed_q, 'formexposed' ), $formexposed_q ) ); ?></a>
+				<span class="fx-small"><?php esc_html_e( 'Stopped by mistake? Deliver it from there with one click.', 'formexposed' ); ?></span></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-option">
 				<input type="hidden" name="action" value="formexposed_pow">
 				<?php wp_nonce_field( 'formexposed_pow' ); ?>
 				<label><input type="checkbox" name="pow_on" value="1" <?php checked( Formexposed_Pow::enabled() ); ?>>
 					<strong><?php esc_html_e( 'Invisible proof of work', 'formexposed' ); ?></strong> - <?php esc_html_e( 'before a form is sent, the visitor\'s browser solves a small calculation (well under a second). No puzzle, no cookie, no third party: a CAPTCHA replacement that runs on your server.', 'formexposed' ); ?></label>
-				<button class="button button-small" style="margin-left:6px"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
+				<button class="button button-small"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
 			</form>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-option">
 				<input type="hidden" name="action" value="formexposed_swarm">
 				<?php wp_nonce_field( 'formexposed_swarm' ); ?>
 				<label><input type="checkbox" name="swarm_on" value="1" <?php checked( ! get_option( 'formexposed_swarm_off' ) ); ?>>
 					<strong><?php esc_html_e( 'Swarm protection', 'formexposed' ); ?></strong> - <?php esc_html_e( 'share the domains of links in stopped messages (no addresses, no text) and also stop links that formexposed has seen in spam on several other sites.', 'formexposed' ); ?></label>
 				<?php if ( $formexposed_swarm_n && ! get_option( 'formexposed_swarm_off' ) ) : ?>
-					<br><span style="color:#50575e;font-size:12px"><?php echo esc_html( sprintf( /* translators: 1: number of domains, 2: date */ __( '%1$d domains on the list, updated %2$s.', 'formexposed' ), $formexposed_swarm_n, wp_date( get_option( 'date_format' ), (int) $formexposed_swarm['at'] ) ) ); ?></span>
+					<br><span class="fx-small"><?php echo esc_html( sprintf( /* translators: 1: number of domains, 2: date */ __( '%1$d domains on the list, updated %2$s.', 'formexposed' ), $formexposed_swarm_n, wp_date( get_option( 'date_format' ), (int) $formexposed_swarm['at'] ) ) ); ?></span>
 				<?php endif; ?>
-				<button class="button button-small" style="margin-left:6px"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
+				<button class="button button-small"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
 			</form>
 			<?php $formexposed_extra = Formexposed_Guard::extra(); ?>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-option">
 				<input type="hidden" name="action" value="formexposed_guard_extra">
 				<?php wp_nonce_field( 'formexposed_guard_extra' ); ?>
-				<strong><?php esc_html_e( 'Also protect', 'formexposed' ); ?></strong><br>
+				<fieldset>
+				<legend><strong><?php esc_html_e( 'Also protect', 'formexposed' ); ?></strong></legend>
 				<label><input type="checkbox" name="extra_comments" value="1" <?php checked( $formexposed_extra['comments'] ); ?>> <?php esc_html_e( 'Comments (stopped ones go to Comments -> Spam)', 'formexposed' ); ?></label><br>
 				<label><input type="checkbox" name="extra_register" value="1" <?php checked( $formexposed_extra['register'] ); ?>> <?php esc_html_e( 'WordPress registration', 'formexposed' ); ?></label><br>
 				<?php if ( class_exists( 'WooCommerce' ) ) : ?>
@@ -126,15 +226,16 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 				<input type="hidden" name="extra_woo_register" value="<?php echo esc_attr( $formexposed_extra['woo_register'] ? '1' : '' ); ?>">
 				<?php endif; ?>
 				<label><input type="checkbox" name="extra_login" value="1" <?php checked( $formexposed_extra['login'] ); ?> <?php disabled( defined( 'FORMEXPOSED_NO_LOGIN_GUARD' ) && FORMEXPOSED_NO_LOGIN_GUARD ); ?>> <?php esc_html_e( 'Login form (only the page check, no rate limit)', 'formexposed' ); ?></label>
-				<br><span style="color:#50575e;font-size:12px;margin-left:24px"><?php esc_html_e( 'Locked out? Add this line to wp-config.php:', 'formexposed' ); ?> <code style="word-break:break-all">define( 'FORMEXPOSED_NO_LOGIN_GUARD', true );</code></span><br>
-				<button class="button button-small" style="margin-top:6px"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
+				<span class="fx-indent"><?php esc_html_e( 'Locked out? Add this line to wp-config.php:', 'formexposed' ); ?> <code style="word-break:break-all">define( 'FORMEXPOSED_NO_LOGIN_GUARD', true );</code></span>
+				</fieldset>
+				<button class="button button-small" style="margin-left:0"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
 			</form>
 			<?php
 			$formexposed_candidate = Formexposed_Filters::candidate();
 			$formexposed_f         = $formexposed_candidate ? $formexposed_candidate['settings'] : Formexposed_Filters::settings();
 			$formexposed_land      = Formexposed_Filters::country_source();
 			?>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-option">
 				<input type="hidden" name="action" value="formexposed_filters">
 				<?php wp_nonce_field( 'formexposed_filters' ); ?>
 			<?php
@@ -165,9 +266,9 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 			<?php endif; ?>
 				<p><label><input type="radio" name="filter_mode" value="observe" checked> <?php esc_html_e( 'Observe changed rules for seven days', 'formexposed' ); ?></label><br>
 				<label><input type="radio" name="filter_mode" value="active"> <?php esc_html_e( 'Apply these rules immediately', 'formexposed' ); ?></label></p>
-				<strong><?php esc_html_e( 'Filters', 'formexposed' ); ?></strong> <span style="color:#50575e;font-size:12px"><?php esc_html_e( 'Stopped messages wait in the quarantine like all others.', 'formexposed' ); ?></span><br>
+				<strong><?php esc_html_e( 'Filters', 'formexposed' ); ?></strong> <span class="fx-small"><?php esc_html_e( 'Stopped messages wait in the quarantine like all others.', 'formexposed' ); ?></span><br>
 				<label><input type="checkbox" name="disposable" value="1" <?php checked( $formexposed_f['disposable'] ); ?>> <?php echo esc_html( sprintf( /* translators: %d: number of services */ __( 'Stop throw-away e-mail addresses (%d known services)', 'formexposed' ), count( Formexposed_Filters::DISPOSABLE ) ) ); ?></label><br>
-				<label style="display:block;margin:4px 0 8px 24px;color:#50575e;font-size:12px"><?php esc_html_e( 'More domains, one per line:', 'formexposed' ); ?><br><textarea name="extra_disposable" rows="2" cols="40" style="max-width:100%" class="code"><?php echo esc_textarea( $formexposed_f['extra_disposable'] ); ?></textarea></label>
+				<label class="fx-indent"><?php esc_html_e( 'More domains, one per line:', 'formexposed' ); ?><br><textarea name="extra_disposable" rows="2" cols="40" class="code"><?php echo esc_textarea( $formexposed_f['extra_disposable'] ); ?></textarea></label>
 				<span><?php esc_html_e( 'Stop messages written mainly in:', 'formexposed' ); ?></span>
 				<?php
 				$formexposed_schriften = array(
@@ -181,39 +282,42 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 				);
 				foreach ( $formexposed_schriften as $formexposed_k => $formexposed_n ) :
 					?>
-					<label style="margin-right:10px"><input type="checkbox" name="scripts[]" value="<?php echo esc_attr( $formexposed_k ); ?>" <?php checked( in_array( $formexposed_k, $formexposed_f['scripts'], true ) ); ?>> <?php echo esc_html( $formexposed_n ); ?></label>
+					<label style="display:inline-block;margin-right:10px"><input type="checkbox" name="scripts[]" value="<?php echo esc_attr( $formexposed_k ); ?>" <?php checked( in_array( $formexposed_k, $formexposed_f['scripts'], true ) ); ?>> <?php echo esc_html( $formexposed_n ); ?></label>
 				<?php endforeach; ?><br>
-				<label style="display:block;margin:8px 0"><?php esc_html_e( 'Blocked words or phrases, one per line (whole words, case does not matter):', 'formexposed' ); ?><br><textarea name="words" rows="3" cols="40" style="max-width:100%" class="code" placeholder="casino&#10;seo services&#10;crypto"><?php echo esc_textarea( $formexposed_f['words'] ); ?></textarea></label>
+				<label style="display:block;margin:8px 0"><?php esc_html_e( 'Blocked words or phrases, one per line (whole words, case does not matter):', 'formexposed' ); ?><br><textarea name="words" rows="3" cols="40" class="code" placeholder="casino&#10;seo services&#10;crypto"><?php echo esc_textarea( $formexposed_f['words'] ); ?></textarea></label>
 				<label><?php esc_html_e( 'Countries:', 'formexposed' ); ?>
 					<select name="country_mode">
 						<option value="off" <?php selected( $formexposed_f['country_mode'], 'off' ); ?>><?php esc_html_e( 'no country filter', 'formexposed' ); ?></option>
 						<option value="allow" <?php selected( $formexposed_f['country_mode'], 'allow' ); ?>><?php esc_html_e( 'only from these countries', 'formexposed' ); ?></option>
 						<option value="block" <?php selected( $formexposed_f['country_mode'], 'block' ); ?>><?php esc_html_e( 'never from these countries', 'formexposed' ); ?></option>
 					</select>
-					<input type="text" name="countries" value="<?php echo esc_attr( $formexposed_f['countries'] ); ?>" placeholder="DE, AT, CH, PL" class="regular-text code" style="max-width:100%"></label><br>
-				<span style="color:#50575e;font-size:12px"><?php echo esc_html( '' !== $formexposed_land ? sprintf( /* translators: %s: source of the country */ __( 'Country known from: %s.', 'formexposed' ), $formexposed_land ) : __( 'No country source on this site (Cloudflare, a GeoIP module of the server or the filter formexposed_client_country) - the country filter cannot block anything here.', 'formexposed' ) ); ?></span><br>
-				<button class="button button-small" style="margin-top:6px"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
+					<input type="text" name="countries" value="<?php echo esc_attr( $formexposed_f['countries'] ); ?>" placeholder="DE, AT, CH, PL" class="regular-text code"></label><br>
+				<span class="fx-small"><?php echo esc_html( '' !== $formexposed_land ? sprintf( /* translators: %s: source of the country */ __( 'Country known from: %s.', 'formexposed' ), $formexposed_land ) : __( 'No country source on this site (Cloudflare, a GeoIP module of the server or the filter formexposed_client_country) - the country filter cannot block anything here.', 'formexposed' ) ); ?></span><br>
+				<button class="button button-small" style="margin:6px 0 0"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
 			</form>
 		<?php elseif ( ! $formexposed_plugins ) : ?>
 			<p><?php esc_html_e( 'The one-click protection works with Contact Form 7, WPForms, Gravity Forms, Elementor Pro, Fluent Forms, Formidable, Ninja Forms and WooCommerce. None of them is active on this site - for other form plugins, follow the guide above.', 'formexposed' ); ?></p>
 		<?php else : ?>
 			<p><?php echo esc_html( sprintf( /* translators: %s: list of form plugins */ __( 'One click adds a protection layer to every form of %s on this site. It runs here, on your server - no keys, no third-party service. While this site is connected to a formexposed account, counts are shared as listed below and in the readme (External services).', 'formexposed' ), implode( ', ', $formexposed_plugins ) ) ); ?></p>
 		<?php endif; ?>
-		<ul style="list-style:disc;padding-left:20px;color:#50575e">
-			<li><?php esc_html_e( 'A hidden trap field that only bots fill in', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'A signed form token and a minimum fill time of 3 seconds', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'Proof that a person used the page before sending', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'At most 5 messages per visitor in 10 minutes', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'No line breaks in name, e-mail or subject (header injection)', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'The e-mail address must belong to a domain that can receive mail', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'Stopped messages wait 14 days in a quarantine on this site - nothing is lost', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'Optional: an invisible proof of work instead of a CAPTCHA', 'formexposed' ); ?></li>
-			<li><?php esc_html_e( 'Also comments and registration; throw-away addresses and filters you choose', 'formexposed' ); ?></li>
-		</ul>
-		<p style="color:#50575e;font-size:12px"><?php esc_html_e( 'Blocked messages are not delivered: Contact Form 7 and Gravity Forms file them as spam, WPForms and Elementor show the sender an error. Every one of them waits in the quarantine. After switching on, run a new check with "Check now" or "Check again" to see the result.', 'formexposed' ); ?></p>
+		<details<?php echo $formexposed_guard ? '' : ' open'; ?>>
+			<summary><strong><?php esc_html_e( 'What the protection layer checks', 'formexposed' ); ?></strong></summary>
+			<ul class="fx-list is-muted">
+				<li><?php esc_html_e( 'A hidden trap field that only bots fill in', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'A signed form token and a minimum fill time of 3 seconds', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'Proof that a person used the page before sending', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'At most 5 messages per visitor in 10 minutes', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'No line breaks in name, e-mail or subject (header injection)', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'The e-mail address must belong to a domain that can receive mail', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'Stopped messages wait 14 days in a quarantine on this site - nothing is lost', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'Optional: an invisible proof of work instead of a CAPTCHA', 'formexposed' ); ?></li>
+				<li><?php esc_html_e( 'Also comments and registration; throw-away addresses and filters you choose', 'formexposed' ); ?></li>
+			</ul>
+			<p class="fx-small"><?php esc_html_e( 'Blocked messages are not delivered: Contact Form 7 and Gravity Forms file them as spam, WPForms and Elementor show the sender an error. Every one of them waits in the quarantine. After switching on, run a new check with "Check now" or "Check again" to see the result.', 'formexposed' ); ?></p>
+		</details>
 		<p>
 		<?php if ( $formexposed_guard ) : ?>
-			<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_guard_off' ), 'formexposed_guard_off' ) ); ?>"><?php esc_html_e( 'Turn protection off', 'formexposed' ); ?></a>
+			<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_guard_off' ), 'formexposed_guard_off' ) ); ?>" data-formexposed-confirm="<?php esc_attr_e( 'Turn the protection layer off? Bots can then send the forms again.', 'formexposed' ); ?>" data-formexposed-ok="<?php esc_attr_e( 'Turn protection off', 'formexposed' ); ?>"><?php esc_html_e( 'Turn protection off', 'formexposed' ); ?></a>
 		<?php elseif ( $formexposed_plugins ) : ?>
 			<a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_guard_on' ), 'formexposed_guard_on' ) ); ?>"><?php esc_html_e( 'Turn on protection', 'formexposed' ); ?></a>
 		<?php endif; ?>
@@ -226,11 +330,11 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 	$formexposed_rc_bak = Formexposed_Recaptcha::backup();
 	if ( $formexposed_rc_an || $formexposed_rc_bak ) :
 		?>
-	<div style="background:#fff;border:1px solid #c3c4c7;border-left:4px solid <?php echo esc_attr( $formexposed_rc_an ? '#996800' : '#00750f' ); ?>;padding:16px 20px;margin:16px 0">
-		<h2 style="margin-top:0"><?php esc_html_e( 'Move away from Google reCAPTCHA', 'formexposed' ); ?></h2>
+	<div class="fx-card <?php echo esc_attr( $formexposed_rc_an ? 'is-warn' : 'is-ok' ); ?>">
+		<h2><?php esc_html_e( 'Move away from Google reCAPTCHA', 'formexposed' ); ?></h2>
 		<?php if ( $formexposed_rc_an ) : ?>
 			<p><?php echo esc_html( sprintf( /* translators: %s: list of form plugins */ __( 'reCAPTCHA is still in use here: %s.', 'formexposed' ), implode( ', ', array_map( array( 'Formexposed_Recaptcha', 'place_name' ), $formexposed_rc_an ) ) ) ); ?></p>
-			<ul style="list-style:disc;padding-left:20px;color:#50575e">
+			<ul class="fx-list is-muted">
 				<li><?php esc_html_e( 'Quota: Google limits the free reCAPTCHA checks per month. Above the limit every request passes - the protection is gone without a warning.', 'formexposed' ); ?></li>
 				<li><?php esc_html_e( 'Consent: reCAPTCHA loads Google scripts and cookies. In the EU that needs the visitor\'s consent first - and a visitor who declines cannot send the form.', 'formexposed' ); ?></li>
 				<li><?php esc_html_e( 'Privacy: the IP address and browser data of every visitor go to Google.', 'formexposed' ); ?></li>
@@ -240,11 +344,11 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 				<p><em><?php esc_html_e( 'Turn on the protection layer above first - the proof of work is one of its checks.', 'formexposed' ); ?></em></p>
 			<?php else : ?>
 				<p><a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=formexposed_recaptcha_off' ), 'formexposed_recaptcha_off' ) ); ?>"><?php esc_html_e( 'Replace reCAPTCHA with the proof of work', 'formexposed' ); ?></a>
-					<span style="color:#50575e;font-size:12px"><?php esc_html_e( 'A self-test runs first; if it fails, nothing is changed.', 'formexposed' ); ?></span></p>
+					<span class="fx-small"><?php esc_html_e( 'A self-test runs first; if it fails, nothing is changed.', 'formexposed' ); ?></span></p>
 			<?php endif; ?>
 			<?php if ( $formexposed_rc['gravityforms'] ) : ?>
 				<p><strong>Gravity Forms:</strong> <?php esc_html_e( 'open the form, delete the CAPTCHA field, update the form. For the reCAPTCHA add-on: Forms -> Settings -> reCAPTCHA, remove the keys or deactivate the add-on.', 'formexposed' ); ?></p>
-				<ul style="list-style:disc;padding-left:20px">
+				<ul class="fx-list">
 				<?php
 				foreach ( $formexposed_rc['gravityforms'] as $formexposed_f ) :
 					?>
@@ -252,7 +356,7 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 			<?php endif; ?>
 			<?php if ( $formexposed_rc['elementor'] ) : ?>
 				<p><strong>Elementor Pro:</strong> <?php esc_html_e( 'edit the page with Elementor, select the form, delete the reCAPTCHA field, update.', 'formexposed' ); ?></p>
-				<ul style="list-style:disc;padding-left:20px">
+				<ul class="fx-list">
 				<?php
 				foreach ( $formexposed_rc['elementor'] as $formexposed_f ) :
 					?>
@@ -274,30 +378,29 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 	$formexposed_hc   = $formexposed_h['counts'];
 	$formexposed_prob = $formexposed_hc['from_visitor'] + $formexposed_hc['notifications_off'] + $formexposed_hc['recipient_freemail'] + $formexposed_hc['upload_no_types'] + $formexposed_hc['uploads_listing'] + $formexposed_hc['autoresponder'];
 	$formexposed_ret  = Formexposed_Retention::days();
-	$formexposed_rw   = Formexposed_Rescue::count_waiting();
 	?>
-	<div style="background:#fff;border:1px solid #c3c4c7;padding:16px 20px;margin:16px 0">
-		<h2 style="margin-top:0"><?php esc_html_e( 'Your forms on this site', 'formexposed' ); ?></h2>
-		<ul style="list-style:disc;padding-left:20px">
-			<li><a href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'forms' ) ) ); ?>"><?php esc_html_e( 'Form settings', 'formexposed' ); ?></a>:
+	<div class="fx-card">
+		<h2><?php esc_html_e( 'Your forms on this site', 'formexposed' ); ?></h2>
+		<ul class="fx-missing">
+			<li><span class="dashicons <?php echo esc_attr( $formexposed_prob ? 'dashicons-warning fx-text-warn' : 'dashicons-yes-alt fx-text-ok' ); ?>" aria-hidden="true"></span><span><a href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'forms' ) ) ); ?>"><?php esc_html_e( 'Form settings', 'formexposed' ); ?></a>:
 				<?php
 				echo esc_html( sprintf( /* translators: %d: number of forms */ _n( '%d form', '%d forms', (int) $formexposed_hc['forms'], 'formexposed' ), (int) $formexposed_hc['forms'] ) ) . ', ';
 				echo $formexposed_prob
-					? '<strong style="color:#996800">' . esc_html( sprintf( /* translators: %d: number of findings */ _n( '%d point to look at', '%d points to look at', $formexposed_prob, 'formexposed' ), $formexposed_prob ) ) . '</strong>'
+					? '<strong class="fx-text-warn">' . esc_html( sprintf( /* translators: %d: number of findings */ _n( '%d point to look at', '%d points to look at', $formexposed_prob, 'formexposed' ), $formexposed_prob ) ) . '</strong>'
 					: esc_html__( 'nothing to fix', 'formexposed' );
 				?>
-			</li>
-			<li><a href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue' ) ) ); ?>"><?php esc_html_e( 'Rescued enquiries', 'formexposed' ); ?></a>:
-				<?php echo $formexposed_rw ? '<strong style="color:#b32d2e">' . esc_html( sprintf( /* translators: %d: number of enquiries */ _n( '%d enquiry could not be e-mailed', '%d enquiries could not be e-mailed', $formexposed_rw, 'formexposed' ), $formexposed_rw ) ) . '</strong>' : esc_html__( 'none - every form e-mail went out', 'formexposed' ); ?>
-			</li>
-			<li><a href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'storage' ) ) ); ?>"><?php esc_html_e( 'Stored enquiries', 'formexposed' ); ?></a>:
+			</span></li>
+			<li><span class="dashicons <?php echo esc_attr( $formexposed_rw ? 'dashicons-email-alt fx-text-bad' : 'dashicons-yes-alt fx-text-ok' ); ?>" aria-hidden="true"></span><span><a href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'rescue' ) ) ); ?>"><?php esc_html_e( 'Rescued enquiries', 'formexposed' ); ?></a>:
+				<?php echo $formexposed_rw ? '<strong class="fx-text-bad">' . esc_html( sprintf( /* translators: %d: number of enquiries */ _n( '%d enquiry could not be e-mailed', '%d enquiries could not be e-mailed', $formexposed_rw, 'formexposed' ), $formexposed_rw ) ) . '</strong>' : esc_html__( 'none - every form e-mail went out', 'formexposed' ); ?>
+			</span></li>
+			<li><span class="dashicons <?php echo esc_attr( $formexposed_ret ? 'dashicons-yes-alt fx-text-ok' : 'dashicons-database' ); ?>" aria-hidden="true"></span><span><a href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'storage' ) ) ); ?>"><?php esc_html_e( 'Stored enquiries', 'formexposed' ); ?></a>:
 				<?php echo esc_html( $formexposed_ret ? sprintf( /* translators: %d: days */ __( 'deleted automatically after %d days', 'formexposed' ), $formexposed_ret ) : __( 'no storage limit set', 'formexposed' ) ); ?>
-			</li>
+			</span></li>
 		</ul>
 	</div>
 
-	<div style="background:#f6f7f7;border:1px solid #c3c4c7;padding:16px 20px;margin:16px 0">
-		<h2 style="margin-top:0"><?php esc_html_e( 'Keep it protected: monitoring', 'formexposed' ); ?></h2>
+	<div class="fx-card is-quiet">
+		<h2><?php esc_html_e( 'Keep it protected: monitoring', 'formexposed' ); ?></h2>
 		<p><?php esc_html_e( 'A theme update, a new plugin, a changed form - protection disappears quietly. With a free formexposed account this site is checked on a schedule and you get a message the moment its protection drops.', 'formexposed' ); ?></p>
 		<p><?php esc_html_e( 'Because this plugin is installed here, the site counts as yours: one click connects it to your account, no DNS record and no file upload needed.', 'formexposed' ); ?></p>
 		<?php if ( Formexposed_Core::rekey_pending() ) : ?>
@@ -312,22 +415,23 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 	</div>
 
 	<?php $formexposed_code_msg = get_option( Formexposed_Core::OPT_CODE_MSG ); ?>
-	<div style="background:#f6f7f7;border:1px solid #c3c4c7;padding:16px 20px;margin:16px 0">
-		<h2 style="margin-top:0"><?php esc_html_e( 'Looked after by an agency?', 'formexposed' ); ?></h2>
+	<div class="fx-card is-quiet">
+		<h2><?php esc_html_e( 'Looked after by an agency?', 'formexposed' ); ?></h2>
 		<?php if ( get_option( Formexposed_Core::OPT_CODE_OK ) ) : ?>
-			<p><strong style="color:#00750f"><?php esc_html_e( 'This site is connected to your agency\'s formexposed account.', 'formexposed' ); ?></strong></p>
+			<p><strong class="fx-text-ok"><?php esc_html_e( 'This site is connected to your agency\'s formexposed account.', 'formexposed' ); ?></strong></p>
 		<?php endif; ?>
 		<p><?php esc_html_e( 'If your agency gave you a code (fxc_...), enter it here. The site is then connected to the agency\'s account - no login needed.', 'formexposed' ); ?></p>
 		<?php if ( is_array( $formexposed_code_msg ) && ! empty( $formexposed_code_msg[1] ) ) : ?>
 			<div class="notice notice-error inline"><p><?php echo esc_html( $formexposed_code_msg[1] ); ?></p></div>
 		<?php endif; ?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-inline-form">
 			<input type="hidden" name="action" value="formexposed_agency">
 			<?php wp_nonce_field( 'formexposed_agency' ); ?>
-			<input type="text" name="formexposed_code" class="regular-text code" style="max-width:100%" placeholder="fxc_..." autocomplete="off" spellcheck="false" maxlength="40">
+			<label class="screen-reader-text" for="formexposed-agency-code"><?php esc_html_e( 'Agency code', 'formexposed' ); ?></label>
+			<input type="text" id="formexposed-agency-code" name="formexposed_code" class="regular-text code" style="max-width:100%" placeholder="fxc_..." autocomplete="off" spellcheck="false" maxlength="40">
 			<button class="button"><?php esc_html_e( 'Connect with the code', 'formexposed' ); ?></button>
 		</form>
-		<p style="color:#50575e;font-size:12px"><?php esc_html_e( 'For many sites at once:', 'formexposed' ); ?> <code>wp formexposed connect fxc_...</code></p>
+		<p class="fx-small"><?php esc_html_e( 'For many sites at once:', 'formexposed' ); ?> <code>wp formexposed connect fxc_...</code></p>
 	</div>
 
 	<p class="description"><?php echo esc_html( sprintf( /* translators: %s: host name */ __( 'Sent to formexposed.com when you click "Check now": the host name (%s), the plugin key and connect secret of this plugin (to prove the request comes from this site), the plugin and WordPress versions and the site language. The service reads your public pages the way a visitor would. Nothing is submitted. Once a day, and only while this site is connected to an account: the number of blocked submissions and of sent and failed e-mails - counts, no message content.', 'formexposed' ), Formexposed_Core::host() ) ); ?>
@@ -335,19 +439,19 @@ $formexposed_check_url = wp_nonce_url( admin_url( 'admin-post.php?action=formexp
 		<a href="<?php echo esc_url( FORMEXPOSED_API . '/en/legal/privacy' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Privacy', 'formexposed' ); ?></a> ·
 		<a href="<?php echo esc_url( FORMEXPOSED_API . '/en/legal/terms' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Terms', 'formexposed' ); ?></a> ·
 		<a href="<?php echo esc_url( FORMEXPOSED_API . '/bot' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'About the crawler', 'formexposed' ); ?></a></p>
-<h2 style="margin-top:28px"><?php esc_html_e( 'Optional form tools', 'formexposed' ); ?></h2>
-<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:12px;border:1px solid #dcdcde;background:#fff">
-<input type="hidden" name="action" value="formexposed_metrics"><?php wp_nonce_field( 'formexposed_metrics' ); ?>
-<label><input type="checkbox" name="metrics_on" value="1" <?php checked( get_option( 'formexposed_metrics_on' ) ); ?>> <?php esc_html_e( 'Optional form event counters (off by default)', 'formexposed' ); ?></label>
-<p><?php esc_html_e( 'Counts per form: seen, started, validation error and submit attempt. No input content or visitor identifiers. Contact Form 7 client signals are shown separately; they do not prove mailbox or CRM delivery. Only connected sites send daily counts to formexposed. Add this optional processing to your privacy information before enabling it.', 'formexposed' ); ?></p>
-<label><input type="checkbox" name="field_metrics_on" value="1" <?php checked( get_option( 'formexposed_field_metrics_on' ) ); ?>> <?php esc_html_e( 'Also count validation categories by field position (optional, no values or field names).', 'formexposed' ); ?></label><br>
-<button class="button"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
-</form>
-<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:12px 0;padding:12px;border:1px solid #dcdcde;background:#fff">
-<input type="hidden" name="action" value="formexposed_recovery"><?php wp_nonce_field( 'formexposed_recovery' ); ?>
-<label><input type="checkbox" name="recovery_on" value="1" <?php checked( get_option( 'formexposed_recovery_on' ) ); ?>> <?php esc_html_e( 'Help visitors after a failed submission (optional)', 'formexposed' ); ?></label>
-<p><?php esc_html_e( 'Keeps the existing open form and offers a return link after offline or Contact Form 7 mail failures. No draft storage or automatic resend. Unclear delivery is labelled separately. Other integrations can emit formexposed:submissionfailed on their form after a confirmed failure.', 'formexposed' ); ?></p>
-<label><?php esc_html_e( 'Alternative contact email (optional)', 'formexposed' ); ?> <input type="email" name="recovery_email" value="<?php echo esc_attr( get_option( 'formexposed_recovery_email', '' ) ); ?>"></label>
-<button class="button"><?php esc_html_e( 'Save', 'formexposed' ); ?></button>
-</form>
+	<h2 style="margin-top:28px"><?php esc_html_e( 'Optional form tools', 'formexposed' ); ?></h2>
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-card">
+		<input type="hidden" name="action" value="formexposed_metrics"><?php wp_nonce_field( 'formexposed_metrics' ); ?>
+		<label><input type="checkbox" name="metrics_on" value="1" <?php checked( get_option( 'formexposed_metrics_on' ) ); ?>> <strong><?php esc_html_e( 'Optional form event counters (off by default)', 'formexposed' ); ?></strong></label>
+		<p><?php esc_html_e( 'Counts per form: seen, started, validation error and submit attempt. No input content or visitor identifiers. Contact Form 7 client signals are shown separately; they do not prove mailbox or CRM delivery. Only connected sites send daily counts to formexposed. Add this optional processing to your privacy information before enabling it.', 'formexposed' ); ?></p>
+		<label><input type="checkbox" name="field_metrics_on" value="1" <?php checked( get_option( 'formexposed_field_metrics_on' ) ); ?>> <?php esc_html_e( 'Also count validation categories by field position (optional, no values or field names).', 'formexposed' ); ?></label>
+		<p><button class="button"><?php esc_html_e( 'Save', 'formexposed' ); ?></button></p>
+	</form>
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="fx-card">
+		<input type="hidden" name="action" value="formexposed_recovery"><?php wp_nonce_field( 'formexposed_recovery' ); ?>
+		<label><input type="checkbox" name="recovery_on" value="1" <?php checked( get_option( 'formexposed_recovery_on' ) ); ?>> <strong><?php esc_html_e( 'Help visitors after a failed submission (optional)', 'formexposed' ); ?></strong></label>
+		<p><?php esc_html_e( 'Keeps the existing open form and offers a return link after offline or Contact Form 7 mail failures. No draft storage or automatic resend. Unclear delivery is labelled separately. Other integrations can emit formexposed:submissionfailed on their form after a confirmed failure.', 'formexposed' ); ?></p>
+		<p class="fx-inline-form"><label for="formexposed-recovery-email"><?php esc_html_e( 'Alternative contact email (optional)', 'formexposed' ); ?></label> <input type="email" id="formexposed-recovery-email" name="recovery_email" value="<?php echo esc_attr( get_option( 'formexposed_recovery_email', '' ) ); ?>">
+		<button class="button"><?php esc_html_e( 'Save', 'formexposed' ); ?></button></p>
+	</form>
 </div>

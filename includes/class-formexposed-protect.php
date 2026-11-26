@@ -891,7 +891,7 @@ class Formexposed_Protect {
 		$p      = self::recent_problem();
 		$s      = $o['stats'];
 		?>
-		<div class="wrap formexposed-wrap" style="max-width:980px">
+		<div class="wrap formexposed-wrap">
 			<h1>formexposed · <?php esc_html_e( 'Form protection', 'formexposed' ); ?></h1>
 			<?php Formexposed_Core::nav( 'protect' ); ?>
 			<?php if ( is_array( $msg ) ) : ?>
@@ -926,6 +926,30 @@ class Formexposed_Protect {
 					</p>
 				<?php endif; ?>
 				<?php if ( self::on() ) : ?>
+					<?php
+					$fx_summe = max( 1, $s['allow'] + $s['flag'] + $s['block'] + $s['unreachable'] );
+					$fx_teile = array(
+						'is-ok'   => array( $s['allow'], __( 'allowed', 'formexposed' ) ),
+						'is-warn' => array( $s['flag'], __( 'flagged', 'formexposed' ) ),
+						'is-bad'  => array( $s['block'], __( 'blocked', 'formexposed' ) ),
+						'is-info' => array( $s['unreachable'], __( 'no clear answer', 'formexposed' ) ),
+					);
+					?>
+					<div class="fx-tiles" style="margin-top:12px">
+						<?php foreach ( $fx_teile as $fx_klasse => $fx_teil ) : ?>
+							<div class="fx-tile <?php echo esc_attr( 'is-info' === $fx_klasse ? 'is-muted' : $fx_klasse ); ?>"><span class="fx-tile-label"><?php echo esc_html( $fx_teil[1] ); ?></span><span class="fx-tile-value"><?php echo esc_html( number_format_i18n( $fx_teil[0] ) ); ?></span></div>
+						<?php endforeach; ?>
+					</div>
+					<div class="fx-share" aria-hidden="true">
+						<?php foreach ( $fx_teile as $fx_klasse => $fx_teil ) : ?>
+							<?php if ( $fx_teil[0] ) : ?><span class="<?php echo esc_attr( $fx_klasse ); ?>" style="<?php echo esc_attr( 'width:' . round( $fx_teil[0] / $fx_summe * 100, 2 ) . '%' ); ?>"></span><?php endif; ?>
+						<?php endforeach; ?>
+					</div>
+					<ul class="fx-legend" aria-hidden="true">
+						<?php foreach ( $fx_teile as $fx_klasse => $fx_teil ) : ?>
+							<li class="<?php echo esc_attr( $fx_klasse ); ?>"><?php echo esc_html( $fx_teil[1] ); ?></li>
+						<?php endforeach; ?>
+					</ul>
 					<p><?php echo esc_html( sprintf( /* translators: 1: allowed, 2: flagged, 3: blocked, 4: without clear answer, 5: let through by the fallback check, 6: held, 7: refused */ __( 'Since activation: %1$d allowed, %2$d flagged, %3$d blocked, %4$d without a clear answer from the service (%5$d of them passed the fallback check). On this site: %6$d held for review, %7$d refused.', 'formexposed' ), $s['allow'], $s['flag'], $s['block'], $s['unreachable'], $s['fallback'], $s['held'], $s['rejected'] ) ); ?>
 					<a href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'quarantine' ) ) ); ?>"><?php esc_html_e( 'Open the quarantine', 'formexposed' ); ?></a></p>
 					<p><strong><?php esc_html_e( 'Fallback check:', 'formexposed' ); ?></strong>

@@ -4,7 +4,7 @@
  * While the page shows a running check (#formexposed-wait), asks admin-ajax (action
  * formexposed_status) every 5 s and reloads the page once the result is in -
  * at most 60 times. Links with data-formexposed-confirm ask in a small dialog
- * before they delete. The values come from Formexposed::admin_assets()
+ * before they delete or switch something off (data-formexposed-ok names the button). The values come from Formexposed::admin_assets()
  * (window.formexposedAdmin).
  */
 ( function ( config ) {
@@ -12,39 +12,48 @@
 
 	var texts = ( config && config.text ) || {};
 
-	/** A modal confirmation (role dialog, focus kept inside, Enter confirms, Escape cancels). */
-	function confirmDialog( message, onConfirm ) {
+	/**
+	 * A modal confirmation: role dialog with title and text, the focus stays inside,
+	 * Enter confirms, Escape cancels, the focus returns to the link that opened it.
+	 */
+	function confirmDialog( message, okLabel, onConfirm ) {
 		var opener = document.activeElement;
 		var backdrop = document.createElement( 'div' );
 		backdrop.className = 'formexposed-dialog-backdrop';
-		backdrop.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px';
 
 		var dialog = document.createElement( 'div' );
+		dialog.className = 'formexposed-dialog';
 		dialog.setAttribute( 'role', 'dialog' );
 		dialog.setAttribute( 'aria-modal', 'true' );
-		dialog.setAttribute( 'aria-labelledby', 'formexposed-dialog-text' );
-		dialog.style.cssText = 'background:#fff;color:#1d2327;max-width:420px;width:100%;padding:20px 24px;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.3)';
+		dialog.setAttribute( 'aria-labelledby', 'formexposed-dialog-title' );
+		dialog.setAttribute( 'aria-describedby', 'formexposed-dialog-text' );
+
+		var title = document.createElement( 'h2' );
+		title.id = 'formexposed-dialog-title';
+		var icon = document.createElement( 'span' );
+		icon.className = 'dashicons dashicons-warning';
+		icon.setAttribute( 'aria-hidden', 'true' );
+		title.append( icon, document.createTextNode( texts.title || 'Please confirm' ) );
 
 		var text = document.createElement( 'p' );
 		text.id = 'formexposed-dialog-text';
-		text.style.cssText = 'margin:0 0 16px;font-size:14px';
 		text.textContent = message;
 
 		var actions = document.createElement( 'p' );
-		actions.style.cssText = 'margin:0;display:flex;gap:8px;justify-content:flex-end';
+		actions.className = 'fx-dialog-actions';
 		var cancel = document.createElement( 'button' );
 		cancel.type = 'button';
 		cancel.className = 'button';
 		cancel.textContent = texts.cancel || 'Cancel';
 		var ok = document.createElement( 'button' );
 		ok.type = 'button';
-		ok.className = 'button button-primary';
-		ok.textContent = texts.confirm || 'Delete';
+		ok.className = 'button button-primary is-destructive';
+		ok.textContent = okLabel || texts.confirm || 'Delete';
 		actions.append( cancel, ok );
-		dialog.append( text, actions );
+		dialog.append( title, text, actions );
 		backdrop.append( dialog );
 		document.body.append( backdrop );
-		ok.focus();
+		cancel.focus();
 
 		function close( confirmed ) {
 			document.removeEventListener( 'keydown', onKey, true );
@@ -60,13 +69,15 @@
 			if ( event.key === 'Escape' ) {
 				event.preventDefault();
 				close( false );
-			} else if ( event.key === 'Enter' && document.activeElement !== cancel ) {
+			} else if ( event.key === 'Enter' ) {
 				event.preventDefault();
-				close( true );
+				close( document.activeElement !== cancel );
 			} else if ( event.key === 'Tab' ) {
-				// Keep the focus on the two buttons.
+				// Keep the focus inside the dialog.
+				var items = [ cancel, ok ];
+				var index = items.indexOf( document.activeElement );
 				event.preventDefault();
-				( document.activeElement === ok ? cancel : ok ).focus();
+				items[ ( index + ( event.shiftKey ? -1 : 1 ) + items.length ) % items.length ].focus();
 			}
 		}
 		document.addEventListener( 'keydown', onKey, true );
@@ -89,7 +100,7 @@
 			return;
 		}
 		event.preventDefault();
-		confirmDialog( link.getAttribute( 'data-formexposed-confirm' ), function () {
+		confirmDialog( link.getAttribute( 'data-formexposed-confirm' ), link.getAttribute( 'data-formexposed-ok' ), function () {
 			window.location.href = link.href;
 		} );
 	} );

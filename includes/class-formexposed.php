@@ -634,6 +634,7 @@ class Formexposed_Core {
 		if ( 'settings_page_formexposed' !== $hook ) {
 			return;
 		}
+		wp_enqueue_style( 'formexposed-admin', plugins_url( 'assets/css/admin.css', FORMEXPOSED_FILE ), array( 'dashicons' ), FORMEXPOSED_VERSION );
 		wp_enqueue_script( 'formexposed-admin', plugins_url( 'assets/js/admin.js', FORMEXPOSED_FILE ), array(), FORMEXPOSED_VERSION, true );
 		wp_add_inline_script( 'formexposed-admin', 'window.formexposedAdmin = ' . wp_json_encode( array(
 			'ajax'  => admin_url( 'admin-ajax.php' ),
@@ -641,6 +642,7 @@ class Formexposed_Core {
 			'text'  => array(
 				'cancel'  => __( 'Cancel', 'formexposed' ),
 				'confirm' => __( 'Delete', 'formexposed' ),
+				'title'   => __( 'Please confirm', 'formexposed' ),
 			),
 		) ) . ';', 'before' );
 	}
@@ -756,10 +758,12 @@ class Formexposed_Core {
 			'storage'    => __( 'Stored enquiries', 'formexposed' ),
 			'protect'    => __( 'Form protection', 'formexposed' ),
 		);
-		echo '<nav class="nav-tab-wrapper" style="margin-bottom:12px">';
+		echo '<nav class="nav-tab-wrapper" aria-label="' . esc_attr__( 'formexposed sections', 'formexposed' ) . '">';
 		foreach ( $tabs as $k => $label ) {
-			$n = 'rescue' === $k ? Formexposed_Rescue::count_waiting() : 0;
-			echo '<a class="nav-tab' . ( $k === $current ? ' nav-tab-active' : '' ) . '" href="' . esc_url( self::page_url( '' === $k ? array() : array( 'tab' => $k ) ) ) . '">' . esc_html( $label ) . ( $n ? ' <span style="color:#b32d2e">(' . (int) $n . ')</span>' : '' ) . '</a>';
+			// Count bubbles: failed e-mails that wait (red) and quarantined messages to review (grey).
+			$n = 'rescue' === $k ? Formexposed_Rescue::count_waiting() : ( 'quarantine' === $k ? Formexposed_Quarantine::count_open() : 0 );
+			echo '<a class="nav-tab' . ( $k === $current ? ' nav-tab-active' : '' ) . '" href="' . esc_url( self::page_url( '' === $k ? array() : array( 'tab' => $k ) ) ) . '"' . ( $k === $current ? ' aria-current="page"' : '' ) . '>' . esc_html( $label )
+				. ( $n ? ' <span class="fx-count' . ( 'quarantine' === $k ? ' is-info' : '' ) . '">' . esc_html( number_format_i18n( $n ) ) . '</span>' : '' ) . '</a>';
 		}
 		echo '</nav>';
 	}

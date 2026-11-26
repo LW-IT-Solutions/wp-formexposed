@@ -146,6 +146,28 @@ class Formexposed_Stats {
 		return $out;
 	}
 
+	/** Short name of a reason for the chart on the settings page (the quarantine explains each one in full). */
+	public static function reason_label( $reason ) {
+		$labels = array(
+			'honeypot'       => __( 'Trap field', 'formexposed' ),
+			'token'          => __( 'Form token', 'formexposed' ),
+			'too_fast'       => __( 'Sent too fast', 'formexposed' ),
+			'no_interaction' => __( 'No interaction', 'formexposed' ),
+			'line_break'     => __( 'Header injection', 'formexposed' ),
+			'mail_domain'    => __( 'Mail domain', 'formexposed' ),
+			'rate_limit'     => __( 'Rate limit', 'formexposed' ),
+			'swarm'          => __( 'Swarm list', 'formexposed' ),
+			'pow'            => __( 'Proof of work', 'formexposed' ),
+			'disposable'     => __( 'Throw-away address', 'formexposed' ),
+			'script'         => __( 'Writing system', 'formexposed' ),
+			'keyword'        => __( 'Blocked word', 'formexposed' ),
+			'country'        => __( 'Country', 'formexposed' ),
+			'fc_block'       => __( 'Hosted protection: blocked', 'formexposed' ),
+			'fc_flag'        => __( 'Hosted protection: flagged', 'formexposed' ),
+		);
+		return isset( $labels[ $reason ] ) ? $labels[ $reason ] : __( 'Other', 'formexposed' );
+	}
+
 	/** Blocked submissions in the stored days. */
 	public static function total_blocked() {
 		$n = 0;

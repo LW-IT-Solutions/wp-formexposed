@@ -4,7 +4,7 @@ Tags: contact form, spam, bots, captcha, honeypot
 Requires at least: 6.2
 Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 1.10.5
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,16 @@ Only after you entered (or fetched) a site key and a secret key on the Form prot
 Not sent anywhere: the quarantine, the rescued e-mails, stored enquiries, form names and the individual findings of the form settings check (only its numbers, see above). The proof of work of the protection layer runs on this site only; its challenges come from your own server and are signed with a key derived from your WordPress salts.
 
 == Changelog ==
+
+= 1.11.0 =
+* Settings page redesigned with its own stylesheet: consistent cards with a colored status edge, badges and admin color scheme accents instead of inline styles.
+* The check result shows the risk score as a ring and lists what is missing with warning icons.
+* New overview of the last 14 days from the counts already stored on the site: key figures, a bar chart of blocked submissions per day and the most frequent reasons. A table version is available to screen readers.
+* The tabs show count bubbles for messages in the quarantine and for rescued enquiries.
+* Quarantine and rescued enquiries: each reason as a short badge with the full explanation below; deleting a single entry and turning the protection layer off now ask in the dialog of the page.
+* The confirmation dialog has a title, keeps the focus inside, starts on "Cancel" and returns the focus afterwards.
+* Form protection tab: allowed, flagged, blocked and unclear results as figures and a share bar. Stored enquiries: a small bar shows how many entries are older than the limit.
+* Narrow screens: tables turn into stacked cards, buttons are at least 40 px high, tabs wrap. No change to what is checked, stored or sent.
 
 = 1.10.5 =
 * Field values from the form plugins (Contact Form 7, WPForms, Gravity Forms, Elementor, Fluent Forms, Formidable, Ninja Forms) are sanitized before they are stored in the quarantine or sent to the hosted form protection; answers of the hosted form protection are sanitized before they are stored.
