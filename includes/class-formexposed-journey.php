@@ -22,7 +22,7 @@ class Formexposed_Journey {
 		if ( is_admin() ) {
 			return;
 		}
-		if ( null !== filter_input( INPUT_GET, 'formexposed_record', FILTER_UNSAFE_RAW ) && current_user_can( 'manage_options' ) ) {
+		if ( null !== filter_input( INPUT_GET, 'formexposed_record', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) ) && current_user_can( 'manage_options' ) ) {
 			// Only a logged-in site administrator can operate this. The fragment never goes to the server.
 			nocache_headers();
 			wp_enqueue_script( 'formexposed-recorder', plugins_url( '../assets/recorder.js', __FILE__ ), array(), FORMEXPOSED_VERSION, true );

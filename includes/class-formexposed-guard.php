@@ -143,21 +143,31 @@ class Formexposed_Guard {
 	private static $strict_pass = false;
 	private static $pow_ok      = false;
 
-	/** Our own fields of the current POST request (the form plugins verify their own requests). */
+	/**
+	 * Our own fields of the current POST request (the form plugins verify their own requests), sanitized as they are read.
+	 * The trap field keeps every printable character (special ones as HTML entities), so a filled trap never turns
+	 * into an empty one.
+	 */
 	public static function request() {
-		$p = filter_input_array( INPUT_POST, array(
-			'formexposed_website' => FILTER_UNSAFE_RAW,
-			'formexposed_time'    => FILTER_UNSAFE_RAW,
-			'formexposed_token'   => FILTER_UNSAFE_RAW,
-			'formexposed_js'      => FILTER_UNSAFE_RAW,
-			'formexposed_pow'     => FILTER_UNSAFE_RAW,
+		$text = array( 'filter' => FILTER_CALLBACK, 'options' => 'sanitize_text_field' );
+		$p    = filter_input_array( INPUT_POST, array(
+			'formexposed_website' => array( 'filter' => FILTER_SANITIZE_SPECIAL_CHARS, 'flags' => FILTER_FLAG_STRIP_LOW ),
+			'formexposed_time'    => $text,
+			'formexposed_token'   => $text,
+			'formexposed_js'      => $text,
+			'formexposed_pow'     => $text,
 		) );
 		return is_array( $p ) ? array_filter( $p, 'is_string' ) : array();
 	}
 
-	/** One field of the current POST request. */
+	/**
+	 * One field of the current POST request, sanitized as it is read: "data" (the URL-encoded form of Fluent Forms)
+	 * with FILTER_SANITIZE_URL, so wp_parse_str() still reads it, every other field with sanitize_text_field().
+	 */
 	public static function posted( $name ) {
-		$v = filter_input( INPUT_POST, $name, FILTER_UNSAFE_RAW );
+		$v = 'data' === $name
+			? filter_input( INPUT_POST, $name, FILTER_SANITIZE_URL )
+			: filter_input( INPUT_POST, $name, FILTER_CALLBACK, array( 'options' => 'sanitize_text_field' ) );
 		return is_string( $v ) ? $v : '';
 	}
 
@@ -985,7 +995,7 @@ class Formexposed_Guard {
 		if ( is_wp_error( $user ) && 'empty_username' === $user->get_error_code() ) {
 			return $user;
 		}
-		if ( ! isset( $GLOBALS['pagenow'] ) || 'wp-login.php' !== $GLOBALS['pagenow'] || null === filter_input( INPUT_POST, 'log', FILTER_UNSAFE_RAW ) ) {
+		if ( ! isset( $GLOBALS['pagenow'] ) || 'wp-login.php' !== $GLOBALS['pagenow'] || '' === self::posted( 'log' ) ) {
 			return $user;
 		}
 		$grund = self::check_proof( self::request() );

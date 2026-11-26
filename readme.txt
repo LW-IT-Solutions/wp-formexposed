@@ -4,7 +4,7 @@ Tags: contact form, spam, bots, captcha, honeypot
 Requires at least: 6.2
 Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 1.10.2
+Stable tag: 1.10.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -140,6 +140,9 @@ Only after you entered (or fetched) a site key and a secret key on the Form prot
 Not sent anywhere: the quarantine, the rescued e-mails, stored enquiries, form names and the details of the form settings check. The proof of work of the protection layer runs on this site only; its challenges come from your own server and are signed with a key derived from your WordPress salts.
 
 == Changelog ==
+
+= 1.10.3 =
+* Every request value is sanitized as it is read (sanitize_text_field, sanitize_key, sanitize_email, FILTER_SANITIZE_URL, FILTER_SANITIZE_SPECIAL_CHARS) instead of being read raw and checked later.
 
 = 1.10.2 =
 * A check on formexposed.com runs only when you click "Check now" / "Check again". Switching the protection layer on and removing a reCAPTCHA test key no longer start a check by themselves.

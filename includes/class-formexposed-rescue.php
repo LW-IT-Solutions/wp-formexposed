@@ -177,13 +177,15 @@ class Formexposed_Rescue {
 					$walk( $x, $tiefe + 1 );
 				}
 			} elseif ( is_string( $v ) && strlen( $v ) <= 254 ) {
-				$a = trim( wp_unslash( $v ) );
+				$a = trim( html_entity_decode( $v, ENT_QUOTES, 'UTF-8' ) );
 				if ( is_email( $a ) ) {
-					$out[] = strtolower( $a );
+					$out[] = strtolower( sanitize_email( $a ) );
 				}
 			}
 		};
-		$walk( filter_input_array( INPUT_POST, FILTER_UNSAFE_RAW, false ), 0 );   // the form plugin verifies its own request; addresses are only compared
+		// The form plugin verifies its own request. Every value is read through FILTER_SANITIZE_SPECIAL_CHARS; only a value that
+		// is a whole e-mail address (is_email) counts, kept through sanitize_email(); addresses are only compared, never stored.
+		$walk( filter_input_array( INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS, false ), 0 );
 		return array_values( array_unique( $out ) );
 	}
 
@@ -558,7 +560,7 @@ class Formexposed_Rescue {
 		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins', 'settings_page_formexposed' ), true ) ) {
 			return;
 		}
-		if ( 'formexposed' === filter_input( INPUT_GET, 'page', FILTER_UNSAFE_RAW ) && 'rescue' === Formexposed_Core::tab() ) {
+		if ( 'formexposed' === filter_input( INPUT_GET, 'page', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) ) && 'rescue' === Formexposed_Core::tab() ) {
 			return;
 		}
 		/* translators: %d: number of enquiries */

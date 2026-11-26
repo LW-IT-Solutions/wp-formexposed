@@ -39,7 +39,7 @@ class Formexposed_Form_Metrics {
 	public static function token( $day ) {
 		return hash_hmac( 'sha256', 'form-metrics|' . $day, wp_salt( 'auth' ) );}
 	public static function assets() {
-		if ( ! get_option( 'formexposed_metrics_on' ) || is_admin() || ! get_option( 'formexposed_linked' ) || ( null !== filter_input( INPUT_GET, 'formexposed_record', FILTER_UNSAFE_RAW ) && current_user_can( 'manage_options' ) ) ) {
+		if ( ! get_option( 'formexposed_metrics_on' ) || is_admin() || ! get_option( 'formexposed_linked' ) || ( null !== filter_input( INPUT_GET, 'formexposed_record', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) ) && current_user_can( 'manage_options' ) ) ) {
 			return;
 		}
 		wp_enqueue_script( 'formexposed-metrics', plugins_url( '../assets/metrics.js', __FILE__ ), array(), FORMEXPOSED_VERSION, true );

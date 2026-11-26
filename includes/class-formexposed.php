@@ -737,7 +737,7 @@ class Formexposed_Core {
 
 	/** The tab of the settings page that is shown (only selects the view, changes nothing). */
 	public static function tab() {
-		$tab = filter_input( INPUT_GET, 'tab', FILTER_UNSAFE_RAW );
+		$tab = filter_input( INPUT_GET, 'tab', FILTER_CALLBACK, array( 'options' => 'sanitize_key' ) );
 		$tab = is_string( $tab ) ? sanitize_key( $tab ) : '';
 		return in_array( $tab, array( 'quarantine', 'rescue', 'forms', 'storage', 'protect' ), true ) ? $tab : '';
 	}
