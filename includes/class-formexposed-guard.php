@@ -699,7 +699,7 @@ class Formexposed_Guard {
 
 	/** WPForms: after its own field validation, before anything is saved or sent. */
 	public static function wpforms_errors( $errors, $form_data ) {
-		$id = isset( $form_data['id'] ) ? $form_data['id'] : 0;
+		$id = isset( $form_data['id'] ) ? absint( $form_data['id'] ) : 0;
 		if ( ! empty( $errors[ $id ] ) ) {
 			return $errors;   // already refused for another reason
 		}

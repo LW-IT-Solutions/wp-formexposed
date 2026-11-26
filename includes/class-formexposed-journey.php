@@ -14,7 +14,7 @@ class Formexposed_Journey {
 		}
 		check_admin_referer( 'formexposed_recovery' );
 		update_option( 'formexposed_recovery_on', ! empty( $_POST['recovery_on'] ) ? 1 : 0, false );
-		update_option( 'formexposed_recovery_email', sanitize_email( wp_unslash( $_POST['recovery_email'] ?? '' ) ), false );
+		update_option( 'formexposed_recovery_email', isset( $_POST['recovery_email'] ) && is_string( $_POST['recovery_email'] ) ? sanitize_email( wp_unslash( $_POST['recovery_email'] ) ) : '', false );
 		wp_safe_redirect( Formexposed_Core::page_url() );
 		exit;
 	}

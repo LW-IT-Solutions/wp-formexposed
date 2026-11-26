@@ -289,8 +289,9 @@ class Formexposed_Protect {
 		if ( '' !== $email && is_email( $email ) ) {
 			$body['email'] = $email;
 		}
-		if ( $o['content'] && 'login' !== $adapter && '' !== trim( (string) $content ) ) {
-			$body['content'] = mb_substr( (string) $content, 0, 2000 );
+		$content = sanitize_textarea_field( (string) $content );
+		if ( $o['content'] && 'login' !== $adapter && '' !== trim( $content ) ) {
+			$body['content'] = mb_substr( $content, 0, 2000 );
 		}
 		$r = wp_remote_post( FORMEXPOSED_PROTECT_API . '/verify', array(
 			'timeout' => self::TIMEOUT,
@@ -323,8 +324,8 @@ class Formexposed_Protect {
 			}
 			return $none;
 		}
-		$codes   = array_values( array_filter( (array) ( isset( $j['error-codes'] ) ? $j['error-codes'] : array() ), 'is_string' ) );
-		$reasons = array_values( array_filter( (array) ( isset( $j['reasons'] ) ? $j['reasons'] : array() ), 'is_string' ) );
+		$codes   = array_values( array_map( 'sanitize_key', array_filter( (array) ( isset( $j['error-codes'] ) ? $j['error-codes'] : array() ), 'is_string' ) ) );
+		$reasons = array_values( array_map( 'sanitize_text_field', array_filter( (array) ( isset( $j['reasons'] ) ? $j['reasons'] : array() ), 'is_string' ) ) );
 		$own     = array_values( array_intersect( $codes, self::NO_CHECK_CODES ) );
 		if ( $own ) {
 			$none['codes'] = $own;

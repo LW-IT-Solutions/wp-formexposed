@@ -84,22 +84,27 @@ class Formexposed_Quarantine {
 		}
 		$felder = array();
 		$antw   = '';
+		// The fields come from the form plugin that received the submission: every label and value is sanitized before
+		// it is stored (labels as one line, values keep their line breaks).
 		foreach ( array_slice( (array) $pairs, 0, 30 ) as $p ) {
-			$label = mb_substr( trim( (string) $p[0] ), 0, 100 );
-			$wert  = mb_substr( (string) $p[1], 0, 5000 );
+			if ( ! is_array( $p ) || ! isset( $p[0], $p[1] ) || ! is_scalar( $p[0] ) || ! is_scalar( $p[1] ) ) {
+				continue;
+			}
+			$label = mb_substr( sanitize_text_field( (string) $p[0] ), 0, 100 );
+			$wert  = mb_substr( sanitize_textarea_field( (string) $p[1] ), 0, 5000 );
 			if ( '' === $label && '' === trim( $wert ) ) {
 				continue;
 			}
 			$felder[] = array( $label, $wert );
 			if ( '' === $antw && is_email( trim( $wert ) ) ) {
-				$antw = trim( $wert );
+				$antw = sanitize_email( trim( $wert ) );
 			}
 		}
 		return (bool) $wpdb->insert( $t, array(
 			'created_at' => gmdate( 'Y-m-d H:i:s' ),
-			'source'     => mb_substr( (string) $source, 0, 20 ),
-			'form'       => mb_substr( (string) $form, 0, 190 ),
-			'reason'     => mb_substr( (string) $reason, 0, 40 ),
+			'source'     => mb_substr( sanitize_key( (string) $source ), 0, 20 ),
+			'form'       => mb_substr( sanitize_text_field( (string) $form ), 0, 190 ),
+			'reason'     => mb_substr( sanitize_text_field( (string) $reason ), 0, 40 ),
 			'fields'     => wp_json_encode( $felder ),
 			'reply_to'   => mb_substr( $antw, 0, 190 ),
 		) );
@@ -283,7 +288,7 @@ class Formexposed_Quarantine {
 			$p[] = __( 'After an offline or supported form error, a helper offers a return to the existing open form and an optional email contact. The helper reads no field values, stores no drafts and performs no automatic resend.', 'formexposed' );
 		}
 		if ( Formexposed_Core::linked() ) {
-			$p[] = __( 'This site is connected to formexposed.com (LW IT Solutions), which monitors the protection of our forms. It receives daily counts (for example blocked and accepted submissions, sent and failed e-mails) and technical details about the form, CAPTCHA and mail plugins in use. With swarm protection on, it also receives the domain names of links found in stopped messages. It receives no e-mail addresses, names or message content.', 'formexposed' );
+			$p[] = __( 'This site is connected to formexposed.com (LW IT Solutions), which monitors the protection of our forms. It receives daily counts (for example blocked and accepted submissions, sent and failed e-mails), technical details about the plugins and themes in use and their updates, the kind of error when a form e-mail fails, whether the site is in maintenance mode and, if form counters are on, counts per form under a random-looking form key. With swarm protection on, it also receives the domain names of links found in stopped messages. It receives no e-mail addresses, names or message content.', 'formexposed' );
 		}
 		$p[]  = Formexposed_Retention::privacy_paragraph();
 		$html = '';

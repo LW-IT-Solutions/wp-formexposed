@@ -4,7 +4,7 @@ Tags: contact form, spam, bots, captcha, honeypot
 Requires at least: 6.2
 Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 1.10.4
+Stable tag: 1.10.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,8 +19,8 @@ Most contact form spam is not a mystery: the form has no protection a bot would 
 **Protection layer (free, runs on your server).** One click adds a hidden trap field, a signed minimum fill time, proof that a person used the page, a rate limit and header-injection and mail-domain checks to the forms of Contact Form 7, WPForms, Gravity Forms, Elementor Pro, Fluent Forms, Formidable and Ninja Forms, to comments and to registration (WordPress and WooCommerce). Optional: the WooCommerce classic checkout and the login form. No keys, no third-party service.
 
 * **Invisible proof of work** instead of a CAPTCHA: the visitor's browser solves a small calculation (well under a second, even on a phone). No puzzle, no cookie, nothing to click for screen reader users.
-* **Filters you choose:** throw-away e-mail addresses (on by default), messages in a writing system you never get real enquiries in, your own blocked words, countries (only if Cloudflare or a GeoIP module of your server knows the country - no lookup leaves your site). The mail-domain check asks the DNS resolver of your server whether the domain of an entered e-mail address can receive mail. New rules can be observed for seven days before they apply.
-* **Nothing is lost:** every stopped message waits 14 days in a quarantine on your server, with the reason in plain words. One click delivers it.
+* **Filters you choose:** throw-away e-mail addresses (on by default), messages in a writing system you never get real enquiries in, your own blocked words, countries (only if Cloudflare or a GeoIP module of your server knows the country - no lookup leaves your site). The mail-domain check asks the DNS resolver of your server whether the domain of an entered e-mail address can receive mail. Changed rules can first be observed for seven days (counted, not applied); you then switch them on with one click.
+* **Nothing is lost:** a stopped contact form message waits 14 days in a quarantine on your server (up to 200 a day), with the reason in plain words. One click delivers it. Stopped comments, registrations and logins are counted, not kept.
 * **Move away from Google reCAPTCHA in one click** (Contact Form 7, WPForms), with a self-test, a backup and Undo.
 
 **Hosted form protection (optional, needs a formexposed account).** Settings → formexposed → Form protection connects Contact Form 7, WPForms, Gravity Forms, Elementor Pro forms, Fluent Forms, Formidable Forms, comments, the WordPress and WooCommerce registration and - if you want - the login form to the form protection service of formexposed (formconfirmed): an invisible proof of work, timing and trap-field signals, address reputation, an e-mail check and a check of the message text (on by default, can be switched off), on servers in the EU, without cookies. The widget shows a small "Confirmed by formconfirmed" badge next to the form; paid plans can hide it. Every token is bound to the form type it was made for. Keys are typed in or fetched from a connected account with one click; a "Test the connection" button tells you at once whether everything works.
@@ -118,10 +118,11 @@ When you click "Connect to a formexposed account", the plugin registers the site
 
 Nothing of this is sent before the site is connected (after "Connect" or an agency code):
 
-* Once a day (POST /api/plugin/stats): the counts of the last 14 days - blocked submissions by reason, accepted submissions, sent and failed e-mails with the kind of the last failure, three numbers about Google reCAPTCHA answers, released quarantine messages; with swarm protection on (default) the domain names of links in stopped messages; the slug and version of active plugins that are on a fixed watch list of 41 form, CAPTCHA and mail plugins (`includes/class-formexposed-health.php`; the service can only shorten it); numbers from the form settings check, the kind of mail route (PHP mail, SMTP or the name of the mail service, for example sendgrid), short ids of the active form plugins, where reCAPTCHA is still used and whether the proof of work is on; the storage limit and counts of stored enquiries; with the optional form counters, their counts. Always with host name, plugin key, connect secret and plugin version. Never e-mail addresses, names or message content. The answer contains the swarm list (domain names).
-* Within a minute of a plugin, theme or WordPress update, activation or deactivation (POST /api/plugin/changes): the name and the old and new version. After a plugin change, also POST /api/plugin/stats with the counts and the plugin versions described above (without the form settings check and the storage numbers), so the account shows the new state at once.
+* Once a day (POST /api/plugin/stats): the counts of the last 14 days - blocked submissions by reason, accepted submissions, sent and failed e-mails with the kind of the last failure, three numbers about Google reCAPTCHA answers, released quarantine messages; whether swarm protection is on, and with swarm protection on (default) the domain names of links in stopped messages; the slug and version of active plugins that are on a fixed watch list of 41 form, CAPTCHA and mail plugins (`includes/class-formexposed-health.php`; the service can only shorten it); numbers from the form settings check, the kind of mail route (PHP mail, SMTP or the name of the mail service, for example sendgrid), short ids of the active form plugins, where reCAPTCHA is still used and whether the proof of work is on; the storage limit and counts of stored enquiries; with the optional form counters, their counts per form under a key that is a SHA-256 hash of the page path and the form position (no form names). Always with host name, plugin key, connect secret and plugin version. Never e-mail addresses, names or message content. The answer contains the swarm list (domain names).
+* Within a minute of a plugin, theme or WordPress update, activation or deactivation, and in the daily run for changes made outside WordPress (POST /api/plugin/changes): the name and the old and new version. After a plugin change, also POST /api/plugin/stats with the counts and the plugin versions described above (without the form settings check and the storage numbers), so the account shows the new state at once.
 * When a form's e-mail fails (POST /api/plugin/mailfail, at most once an hour): the kind of the error and whether the enquiry was kept.
 * While the site is in maintenance mode (POST /api/plugin/maintenance): "on" every hour, "off" once.
+* Each of these requests also carries the host name, the plugin key and the connect secret, so the service knows which site it is.
 
 = formexposed.com - check recorder (optional) =
 
@@ -140,6 +141,10 @@ Only after you entered (or fetched) a site key and a secret key on the Form prot
 Not sent anywhere: the quarantine, the rescued e-mails, stored enquiries, form names and the individual findings of the form settings check (only its numbers, see above). The proof of work of the protection layer runs on this site only; its challenges come from your own server and are signed with a key derived from your WordPress salts.
 
 == Changelog ==
+
+= 1.10.5 =
+* Field values from the form plugins (Contact Form 7, WPForms, Gravity Forms, Elementor, Fluent Forms, Formidable, Ninja Forms) are sanitized before they are stored in the quarantine or sent to the hosted form protection; answers of the hosted form protection are sanitized before they are stored.
+* The readme, the settings page and the privacy policy texts describe exactly what is sent while the site is connected and which stored messages the storage limit deletes.
 
 = 1.10.4 =
 * The filter settings are read field by field and sanitized as they are read; the public counter route has typed and sanitized arguments; answers of formexposed.com are sanitized before they are stored.

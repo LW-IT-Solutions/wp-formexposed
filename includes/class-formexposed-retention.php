@@ -302,6 +302,6 @@ class Formexposed_Retention {
 	public static function privacy_paragraph() {
 		$d = self::days();
 		/* translators: %d: number of days */
-		return $d ? sprintf( __( 'Messages sent through our contact forms and stored on this website are deleted automatically after %d days.', 'formexposed' ), $d ) : '';
+		return $d ? sprintf( __( 'Messages sent through our contact forms and stored on this website by Flamingo, Gravity Forms or Ninja Forms are deleted automatically after %d days.', 'formexposed' ), $d ) : '';
 	}
 }

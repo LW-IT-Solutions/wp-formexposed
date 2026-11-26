@@ -36,7 +36,7 @@ class Formexposed_CLI {
 		if ( is_wp_error( $r ) ) {
 			WP_CLI::error( $r->get_error_message() );
 		}
-		WP_CLI::success( sprintf( 'Connected %s to "%s"%s.', $r['host'], $r['workspace'], ! empty( $r['verified'] ) ? ', verified' : '' ) );
+		WP_CLI::success( sprintf( 'Connected %s to "%s"%s.', sanitize_text_field( (string) ( $r['host'] ?? '' ) ), sanitize_text_field( (string) ( $r['workspace'] ?? '' ) ), ! empty( $r['verified'] ) ? ', verified' : '' ) );
 	}
 
 	/**

@@ -16,7 +16,7 @@ $formexposed_quellen = array( 'cf7' => 'Contact Form 7', 'wpforms' => 'WPForms',
 <div class="wrap" style="max-width:980px">
 	<h1>formexposed · <?php esc_html_e( 'Quarantine', 'formexposed' ); ?></h1>
 	<?php Formexposed_Core::nav( 'quarantine' ); ?>
-	<p class="description"><?php echo esc_html( sprintf( /* translators: 1: days, 2: e-mail address */ __( 'Messages the protection layer stopped, or the hosted form protection held back, stay here for %1$d days, then they are deleted. If a real person was stopped, "Deliver" sends the message to %2$s with the sender as Reply-To. The quarantine itself is never sent anywhere.', 'formexposed' ), Formexposed_Quarantine::DAYS, Formexposed_Quarantine::recipient() ) ); ?></p>
+	<p class="description"><?php echo esc_html( sprintf( /* translators: 1: days, 2: e-mail address */ __( 'Messages the protection layer stopped, or the hosted form protection held back, stay here for %1$d days, then they are deleted. If a real person was stopped, "Deliver" sends the message to %2$s with the sender as Reply-To. The quarantine itself is never sent anywhere; with swarm protection on, only the domain names of links in stopped messages are shared.', 'formexposed' ), Formexposed_Quarantine::DAYS, Formexposed_Quarantine::recipient() ) ); ?></p>
 
 	<?php if ( is_array( $msg ) ) : ?>
 		<div class="notice notice-<?php echo esc_attr( 'ok' === $msg[0] ? 'success' : 'error' ); ?> is-dismissible"><p><?php echo esc_html( $msg[1] ); ?></p></div>

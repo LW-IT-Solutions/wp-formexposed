@@ -124,8 +124,8 @@ class Formexposed_Rescue {
 
 	private static function start( $source, $form ) {
 		self::$ctx      = array(
-			'source'  => $source,
-			'form'    => mb_substr( trim( (string) $form ), 0, 190 ),
+			'source'  => sanitize_key( (string) $source ),
+			'form'    => mb_substr( sanitize_text_field( (string) $form ), 0, 190 ),
 			'visitor' => self::visitor_addresses(),
 		);
 		self::$mails    = array();
