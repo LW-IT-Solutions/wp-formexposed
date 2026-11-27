@@ -184,6 +184,14 @@ class Formexposed_Quarantine {
 				return __( 'Contains a link to a domain that formexposed has seen in spam on several other sites.', 'formexposed' );
 			case 'pow':
 				return __( 'The invisible proof of work was missing, wrong or used twice - usually a bot that does not run the page\'s script.', 'formexposed' );
+			case 'disposable':
+				return __( 'The e-mail address belongs to a throw-away mail service (one of the known services or a domain added under Filters).', 'formexposed' );
+			case 'script':
+				return __( 'The message is written mainly in a writing system that the filters on the Overview tab stop.', 'formexposed' );
+			case 'keyword':
+				return __( 'The message contains one of the blocked words or phrases of the filters.', 'formexposed' );
+			case 'country':
+				return __( 'Sent from a country that the country filter does not allow.', 'formexposed' );
 			case 'fc_block':
 				/* translators: %s: product name of the hosted form protection */
 				return sprintf( __( 'Blocked by the hosted form protection (%s).', 'formexposed' ), FORMEXPOSED_PROTECT_NAME );

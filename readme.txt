@@ -4,7 +4,7 @@ Tags: contact form, spam, bots, captcha, honeypot
 Requires at least: 6.2
 Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,15 @@ Only after you entered (or fetched) a site key and a secret key on the Form prot
 Not sent anywhere: the quarantine, the rescued e-mails, stored enquiries, form names and the individual findings of the form settings check (only its numbers, see above). The proof of work of the protection layer runs on this site only; its challenges come from your own server and are signed with a key derived from your WordPress salts.
 
 == Changelog ==
+
+= 1.12.0 =
+* Overview: the chart of the last 14 days shows the reasons of each day in colour. A tip names them on hover or focus (arrow keys move between the days), and the reason list switches reasons in the chart on and off.
+* Overview: the risk ring draws itself and the counters count up once when they appear (not with reduced motion).
+* Quarantine: a 14-day line shows when the messages of the page arrived; a dot leads to its message.
+* Quarantine: search with marked hits (shortcut /) and filters by reason; each message shows how many days remain until it is deleted.
+* Form settings: an overview of all seven checks with a ring and links to each finding.
+* Fixed: messages held because the hosted form protection gave no clear answer showed the reason "Other"; they now say "Hosted protection: no clear answer".
+* Throw-away addresses, writing systems, blocked words and countries now have their own explanation in the quarantine.
 
 = 1.11.0 =
 * Settings page redesigned with its own stylesheet: consistent cards with a colored status edge, badges and admin color scheme accents instead of inline styles.

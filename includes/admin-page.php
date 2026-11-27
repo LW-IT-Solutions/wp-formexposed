@@ -49,12 +49,12 @@ $formexposed_karte     = $formexposed_fertig ? ( isset( $formexposed_stufe[ $for
 					$formexposed_score = max( 0, min( 100, (int) $last['score'] ) );
 					$formexposed_umfang = 2 * M_PI * 42;
 					?>
-					<div class="fx-ring" style="<?php echo esc_attr( 'color:' . $formexposed_farbe ); ?>" role="img" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: score 0-100 */ __( 'risk score %d / 100', 'formexposed' ), $formexposed_score ) ); ?>">
+					<div class="fx-ring" data-fx-ring style="<?php echo esc_attr( 'color:' . $formexposed_farbe ); ?>" role="img" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: score 0-100 */ __( 'risk score %d / 100', 'formexposed' ), $formexposed_score ) ); ?>">
 						<svg viewBox="0 0 104 104" aria-hidden="true" focusable="false">
 							<circle class="fx-ring-track" cx="52" cy="52" r="42"></circle>
 							<circle class="fx-ring-value" cx="52" cy="52" r="42" stroke-dasharray="<?php echo esc_attr( round( $formexposed_umfang * $formexposed_score / 100, 2 ) . ' ' . round( $formexposed_umfang, 2 ) ); ?>"></circle>
 						</svg>
-						<span class="fx-ring-label" aria-hidden="true"><strong><?php echo esc_html( number_format_i18n( $formexposed_score ) ); ?></strong><span><?php esc_html_e( 'risk / 100', 'formexposed' ); ?></span></span>
+						<span class="fx-ring-label" aria-hidden="true"><strong data-fx-count="<?php echo esc_attr( (string) $formexposed_score ); ?>"><?php echo esc_html( number_format_i18n( $formexposed_score ) ); ?></strong><span><?php esc_html_e( 'risk / 100', 'formexposed' ); ?></span></span>
 					</div>
 				<?php endif; ?>
 				<div>
@@ -99,8 +99,10 @@ $formexposed_karte     = $formexposed_fertig ? ( isset( $formexposed_stufe[ $for
 	$formexposed_serie  = array();
 	$formexposed_gruende = array();
 	$formexposed_mails  = array( 0, 0 );
+	$formexposed_tagmap = array();
 	foreach ( $formexposed_tage as $formexposed_tag ) {
-		$formexposed_serie[ $formexposed_tag['day'] ] = array_sum( $formexposed_tag['blocked'] );
+		$formexposed_serie[ $formexposed_tag['day'] ]  = array_sum( $formexposed_tag['blocked'] );
+		$formexposed_tagmap[ $formexposed_tag['day'] ] = $formexposed_tag['blocked'];
 		foreach ( $formexposed_tag['blocked'] as $formexposed_grund => $formexposed_n ) {
 			$formexposed_gruende[ $formexposed_grund ] = ( isset( $formexposed_gruende[ $formexposed_grund ] ) ? $formexposed_gruende[ $formexposed_grund ] : 0 ) + (int) $formexposed_n;
 		}
@@ -114,6 +116,11 @@ $formexposed_karte     = $formexposed_fertig ? ( isset( $formexposed_stufe[ $for
 		$formexposed_balken[ $formexposed_d ] = isset( $formexposed_serie[ $formexposed_d ] ) ? $formexposed_serie[ $formexposed_d ] : 0;
 	}
 	$formexposed_max = max( 1, max( $formexposed_balken ) );
+	// 1.12.0: the six most frequent reasons keep one colour in the chart and the list; the rest is "Other" in grey.
+	$formexposed_farbe_von = array_flip( array_slice( array_keys( $formexposed_gruende ), 0, 6 ) );
+	$formexposed_ton = static function ( $grund ) use ( $formexposed_farbe_von ) {
+		return 'fx-c' . ( isset( $formexposed_farbe_von[ $grund ] ) ? (int) $formexposed_farbe_von[ $grund ] : 6 );
+	};
 	?>
 	<?php if ( $formexposed_guard || $formexposed_blocked || $formexposed_q || $formexposed_rw ) : ?>
 	<div class="fx-card is-quiet">
@@ -121,7 +128,7 @@ $formexposed_karte     = $formexposed_fertig ? ( isset( $formexposed_stufe[ $for
 		<div class="fx-tiles">
 			<a class="fx-tile" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'quarantine' ) ) ); ?>">
 				<span class="fx-tile-label"><?php esc_html_e( 'Submissions blocked', 'formexposed' ); ?></span>
-				<span class="fx-tile-value"><?php echo esc_html( number_format_i18n( $formexposed_blocked ) ); ?></span>
+				<span class="fx-tile-value" data-fx-count="<?php echo esc_attr( (string) $formexposed_blocked ); ?>"><?php echo esc_html( number_format_i18n( $formexposed_blocked ) ); ?></span>
 				<span class="fx-tile-note"><?php echo esc_html( $formexposed_guard ? __( 'protection layer on', 'formexposed' ) : __( 'protection layer off', 'formexposed' ) ); ?></span>
 			</a>
 			<a class="fx-tile <?php echo esc_attr( $formexposed_q ? 'is-warn' : 'is-ok' ); ?>" href="<?php echo esc_url( Formexposed_Core::page_url( array( 'tab' => 'quarantine' ) ) ); ?>">
@@ -136,16 +143,38 @@ $formexposed_karte     = $formexposed_fertig ? ( isset( $formexposed_stufe[ $for
 			</a>
 			<div class="fx-tile <?php echo esc_attr( $formexposed_mails[1] ? 'is-warn' : 'is-ok' ); ?>">
 				<span class="fx-tile-label"><?php esc_html_e( 'E-mails sent', 'formexposed' ); ?></span>
-				<span class="fx-tile-value"><?php echo esc_html( number_format_i18n( $formexposed_mails[0] ) ); ?></span>
+				<span class="fx-tile-value" data-fx-count="<?php echo esc_attr( (string) $formexposed_mails[0] ); ?>"><?php echo esc_html( number_format_i18n( $formexposed_mails[0] ) ); ?></span>
 				<span class="fx-tile-note"><?php echo esc_html( sprintf( /* translators: %d: number of failed e-mails */ _n( '%d failed', '%d failed', $formexposed_mails[1], 'formexposed' ), $formexposed_mails[1] ) ); ?></span>
 			</div>
 		</div>
 		<div class="fx-chart-wrap">
 			<div>
 				<h3 id="formexposed-chart-title"><?php esc_html_e( 'Blocked submissions per day', 'formexposed' ); ?></h3>
-				<div class="fx-bars" aria-hidden="true">
+				<div class="fx-bars" data-fx-chart>
 					<?php foreach ( $formexposed_balken as $formexposed_d => $formexposed_n ) : ?>
-						<span class="fx-bar<?php echo esc_attr( ( $formexposed_n ? '' : ' is-zero' ) . ( gmdate( 'Y-m-d' ) === $formexposed_d ? ' is-today' : '' ) ); ?>" style="<?php echo esc_attr( 'height:' . max( 2, round( $formexposed_n / $formexposed_max * 100 ) ) . '%' ); ?>" title="<?php echo esc_attr( wp_date( get_option( 'date_format' ), strtotime( $formexposed_d . ' 12:00:00 UTC' ) ) . ': ' . $formexposed_n ); ?>"></span>
+						<?php
+						$formexposed_datum = wp_date( get_option( 'date_format' ), strtotime( $formexposed_d . ' 12:00:00 UTC' ) );
+						/* translators: 1: date, 2: number of blocked submissions */
+						$formexposed_satz_tag = sprintf( _n( '%1$s: %2$s submission blocked', '%1$s: %2$s submissions blocked', (int) $formexposed_n, 'formexposed' ), $formexposed_datum, number_format_i18n( $formexposed_n ) );
+						$formexposed_tag_g    = array();
+						foreach ( ( isset( $formexposed_tagmap[ $formexposed_d ] ) ? $formexposed_tagmap[ $formexposed_d ] : array() ) as $formexposed_grund => $formexposed_gn ) {
+							$formexposed_k = isset( $formexposed_farbe_von[ $formexposed_grund ] ) ? $formexposed_grund : 'other';
+							$formexposed_tag_g[ $formexposed_k ] = ( isset( $formexposed_tag_g[ $formexposed_k ] ) ? $formexposed_tag_g[ $formexposed_k ] : 0 ) + (int) $formexposed_gn;
+						}
+						uksort(
+							$formexposed_tag_g,
+							static function ( $a, $b ) use ( $formexposed_farbe_von ) {
+								return ( isset( $formexposed_farbe_von[ $a ] ) ? $formexposed_farbe_von[ $a ] : 9 ) - ( isset( $formexposed_farbe_von[ $b ] ) ? $formexposed_farbe_von[ $b ] : 9 );
+							}
+						);
+						?>
+						<span class="fx-bar<?php echo esc_attr( ( $formexposed_n ? '' : ' is-zero' ) . ( gmdate( 'Y-m-d' ) === $formexposed_d ? ' is-today' : '' ) ); ?>" style="<?php echo esc_attr( 'height:' . max( 2, round( $formexposed_n / $formexposed_max * 100 ) ) . '%' ); ?>" title="<?php echo esc_attr( $formexposed_satz_tag ); ?>" tabindex="0" role="img" aria-label="<?php echo esc_attr( $formexposed_satz_tag ); ?>" data-fx-date="<?php echo esc_attr( $formexposed_datum ); ?>">
+							<?php foreach ( $formexposed_tag_g as $formexposed_grund => $formexposed_gn ) : ?>
+								<?php if ( (int) $formexposed_gn > 0 ) : ?>
+									<span class="fx-seg <?php echo esc_attr( $formexposed_ton( $formexposed_grund ) ); ?>" style="<?php echo esc_attr( 'flex-grow:' . (int) $formexposed_gn ); ?>" data-fx-reason="<?php echo esc_attr( $formexposed_grund ); ?>" data-fx-label="<?php echo esc_attr( Formexposed_Stats::reason_label( $formexposed_grund ) ); ?>" data-fx-n="<?php echo esc_attr( (string) (int) $formexposed_gn ); ?>"></span>
+								<?php endif; ?>
+							<?php endforeach; ?>
+						</span>
 					<?php endforeach; ?>
 				</div>
 				<div class="fx-axis" aria-hidden="true"><span><?php echo esc_html( wp_date( 'j M', strtotime( array_key_first( $formexposed_balken ) . ' 12:00:00 UTC' ) ) ); ?></span><span><?php echo esc_html( sprintf( /* translators: %s: highest number of blocked submissions on one day */ __( 'highest: %s per day', 'formexposed' ), number_format_i18n( max( $formexposed_balken ) ) ) ); ?></span><span><?php esc_html_e( 'today', 'formexposed' ); ?></span></div>
@@ -168,7 +197,7 @@ $formexposed_karte     = $formexposed_fertig ? ( isset( $formexposed_stufe[ $for
 					$formexposed_top = max( 1, reset( $formexposed_gruende ) );
 					foreach ( array_slice( $formexposed_gruende, 0, 6, true ) as $formexposed_grund => $formexposed_n ) :
 						?>
-						<li><span><?php echo esc_html( Formexposed_Stats::reason_label( $formexposed_grund ) ); ?></span><span class="fx-num"><?php echo esc_html( number_format_i18n( $formexposed_n ) ); ?></span><span class="fx-reason-track" aria-hidden="true"><span class="fx-reason-fill" style="<?php echo esc_attr( 'width:' . max( 3, round( $formexposed_n / $formexposed_top * 100 ) ) . '%' ); ?>"></span></span></li>
+						<li data-fx-reason="<?php echo esc_attr( $formexposed_grund ); ?>"><span><span class="fx-dot <?php echo esc_attr( $formexposed_ton( $formexposed_grund ) ); ?>" aria-hidden="true"></span><?php echo esc_html( Formexposed_Stats::reason_label( $formexposed_grund ) ); ?></span><span class="fx-num"><?php echo esc_html( number_format_i18n( $formexposed_n ) ); ?></span><span class="fx-reason-track" aria-hidden="true"><span class="fx-reason-fill <?php echo esc_attr( $formexposed_ton( $formexposed_grund ) ); ?>" style="<?php echo esc_attr( 'width:' . max( 3, round( $formexposed_n / $formexposed_top * 100 ) ) . '%' ); ?>"></span></span></li>
 					<?php endforeach; ?>
 					</ul>
 				<?php endif; ?>

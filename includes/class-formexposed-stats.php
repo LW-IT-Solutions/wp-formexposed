@@ -164,6 +164,7 @@ class Formexposed_Stats {
 			'country'        => __( 'Country', 'formexposed' ),
 			'fc_block'       => __( 'Hosted protection: blocked', 'formexposed' ),
 			'fc_flag'        => __( 'Hosted protection: flagged', 'formexposed' ),
+			'fc_unavailable' => __( 'Hosted protection: no clear answer', 'formexposed' ),
 		);
 		return isset( $labels[ $reason ] ) ? $labels[ $reason ] : __( 'Other', 'formexposed' );
 	}

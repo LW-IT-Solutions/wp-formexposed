@@ -37,6 +37,48 @@ $formexposed_rc      = Formexposed_Recaptcha::details();
 			<span class="fx-small"><?php echo esc_html( sprintf( /* translators: %s: date */ __( 'Checked %s.', 'formexposed' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $formexposed_scan['at'] ) ) ); ?></span></p>
 	</div>
 
+	<?php
+	// 1.12.0: all seven checks at a glance, each finding one click away.
+	$formexposed_sauber = 0;
+	foreach ( $formexposed_reihe as $formexposed_k ) {
+		$formexposed_sauber += empty( $formexposed_art[ $formexposed_k ] ) ? 1 : 0;
+	}
+	$formexposed_umfang = 2 * M_PI * 24;
+	$formexposed_anteil = $formexposed_sauber / count( $formexposed_reihe );
+	?>
+	<div class="fx-card fx-health">
+		<div class="fx-health-head">
+			<svg class="fx-health-ring" viewBox="0 0 60 60" aria-hidden="true" focusable="false">
+				<circle cx="30" cy="30" r="24" class="fx-ring-track"></circle>
+				<circle cx="30" cy="30" r="24" class="fx-health-value" stroke-dasharray="<?php echo esc_attr( round( $formexposed_umfang * $formexposed_anteil, 2 ) . ' ' . round( $formexposed_umfang, 2 ) ); ?>"></circle>
+			</svg>
+			<span class="fx-health-n" aria-hidden="true"><?php echo esc_html( $formexposed_sauber . '/' . count( $formexposed_reihe ) ); ?></span>
+			<div>
+				<h2><?php echo esc_html( sprintf( /* translators: 1: checks without findings, 2: all checks */ __( '%1$d of %2$d checks without findings', 'formexposed' ), $formexposed_sauber, count( $formexposed_reihe ) ) ); ?></h2>
+				<p class="fx-small"><?php esc_html_e( 'Red costs enquiries or exposes data, yellow is worth a look, blue is only a note. A finding opens with one click.', 'formexposed' ); ?></p>
+			</div>
+		</div>
+		<ol class="fx-health-list">
+			<?php foreach ( $formexposed_reihe as $formexposed_k ) : ?>
+				<?php
+				$formexposed_titel_k = Formexposed_Health::kind_text( $formexposed_k )[0];
+				$formexposed_n_k     = empty( $formexposed_art[ $formexposed_k ] ) ? 0 : count( $formexposed_art[ $formexposed_k ] );
+				$formexposed_ton_k   = ! $formexposed_n_k ? 'is-ok' : ( 'recipient_external' === $formexposed_k ? 'is-info' : ( in_array( $formexposed_k, array( 'from_visitor', 'notifications_off', 'uploads_listing' ), true ) ? 'is-bad' : 'is-warn' ) );
+				?>
+				<li class="<?php echo esc_attr( $formexposed_ton_k ); ?>">
+					<span class="dashicons <?php echo esc_attr( $formexposed_n_k ? ( 'is-info' === $formexposed_ton_k ? 'dashicons-info' : 'dashicons-warning' ) : 'dashicons-yes-alt' ); ?>" aria-hidden="true"></span>
+					<?php if ( $formexposed_n_k ) : ?>
+						<a href="<?php echo esc_attr( '#fx-k-' . $formexposed_k ); ?>" data-fx-jump><?php echo esc_html( $formexposed_titel_k ); ?></a>
+						<span class="fx-count<?php echo esc_attr( 'is-info' === $formexposed_ton_k ? ' is-info' : '' ); ?>"><?php echo esc_html( number_format_i18n( $formexposed_n_k ) ); ?></span>
+					<?php else : ?>
+						<span class="fx-text-muted"><?php echo esc_html( $formexposed_titel_k ); ?></span>
+						<span class="fx-health-ok"><?php esc_html_e( 'not found', 'formexposed' ); ?></span>
+					<?php endif; ?>
+				</li>
+			<?php endforeach; ?>
+		</ol>
+	</div>
+
 	<?php if ( ! $formexposed_scan['items'] ) : ?>
 		<div class="fx-card is-ok"><p class="fx-empty"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><?php esc_html_e( 'Nothing found - the forms here are set up the way they should be.', 'formexposed' ); ?></p></div>
 	<?php endif; ?>
@@ -49,7 +91,7 @@ $formexposed_rc      = Formexposed_Recaptcha::details();
 		list( $formexposed_titel, $formexposed_warum, $formexposed_fix ) = Formexposed_Health::kind_text( $formexposed_k );
 		$formexposed_farbe                           = 'recipient_external' === $formexposed_k ? 'is-info' : ( in_array( $formexposed_k, array( 'from_visitor', 'notifications_off', 'uploads_listing' ), true ) ? 'is-bad' : 'is-warn' );
 		?>
-		<div class="fx-card <?php echo esc_attr( $formexposed_farbe ); ?>">
+		<div class="fx-card <?php echo esc_attr( $formexposed_farbe ); ?>" id="<?php echo esc_attr( 'fx-k-' . $formexposed_k ); ?>" tabindex="-1">
 			<h2><?php echo esc_html( $formexposed_titel ); ?> <span class="fx-count<?php echo esc_attr( 'is-info' === $formexposed_farbe ? ' is-info' : '' ); ?>"><?php echo (int) count( $formexposed_art[ $formexposed_k ] ); ?></span></h2>
 			<p><?php echo esc_html( $formexposed_warum ); ?></p>
 			<p><strong><?php esc_html_e( 'How to fix it:', 'formexposed' ); ?></strong> <?php echo esc_html( $formexposed_fix ); ?></p>

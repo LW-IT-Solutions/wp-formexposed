@@ -3,7 +3,7 @@
  * Plugin Name:       formexposed – Contact form spam check
  * Plugin URI:        https://formexposed.com/
  * Description:       Checks whether the contact forms on this site are protected against bots and spam, adds a free protection layer and connects the hosted form protection of formexposed.
- * Version:           1.11.0
+ * Version:           1.12.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            LW IT Solutions
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FORMEXPOSED_VERSION', '1.11.0' );
+define( 'FORMEXPOSED_VERSION', '1.12.0' );
 define( 'FORMEXPOSED_FILE', __FILE__ );
 
 // The addresses of the services (includes/services.json). wp-config.php may override each constant

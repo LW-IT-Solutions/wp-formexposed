@@ -643,6 +643,9 @@ class Formexposed_Core {
 				'cancel'  => __( 'Cancel', 'formexposed' ),
 				'confirm' => __( 'Delete', 'formexposed' ),
 				'title'   => __( 'Please confirm', 'formexposed' ),
+				/* translators: 1: messages shown, 2: messages on this page */
+				'shown'   => __( 'Messages shown: %1$d of %2$d', 'formexposed' ),
+				'chartReasons' => __( 'Show these reasons in the chart', 'formexposed' ),
 			),
 		) ) . ';', 'before' );
 	}
